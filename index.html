@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mentum Program 1.2 - Suite v6 con Respaldo | Francisco Verdugo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #0f172a; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif; }
+    .card { background-color: #1e293b; border: 1px solid #334155; border-radius: 1rem; }
+    .tab-active { background-color: #10b981; color: #052e16; font-weight: 800; }
+    .tab-inactive { background-color: #1e293b; color: #94a3b8; }
+    .menu-card-selected { border: 2px solid #10b981 !important; background-color: rgba(16, 185, 129, 0.08) !important; }
+    @media print {
+      header, .no-print { display: none !important; }
+      body { background: white; color: black; }
+      .card { border: 1px solid #ccc; background: white; color: black; break-inside: avoid; }
+    }
+  </style>
+</head>
+<body class="min-h-screen pb-14">
+
+  <!-- Header Principal -->
+  <header class="border-b border-slate-800 bg-slate-900/95 sticky top-0 z-30 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap justify-between items-center gap-3">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold uppercase tracking-widest text-emerald-400">Mentum Program • Etapa 1.2</span>
+          <span id="modeBadge" class="text-[11px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-semibold">Mix & Match</span>
+          <span id="saveIndicator" class="text-[11px] text-slate-400 flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> Autoguardado activo
+          </span>
+        </div>
+        <h1 class="text-lg md:text-2xl font-extrabold text-white mt-0.5">Plan Nutricional: Francisco Verdugo</h1>
+      </div>
+
+      <!-- Botones de Respaldo y Restauración -->
+      <div class="flex flex-wrap items-center gap-1.5 no-print">
+        <button onclick="exportBackupJSON()" title="Descargar copia de seguridad en archivo" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-emerald-400 font-bold px-2.5 py-1.5 rounded-lg transition">
+          📤 Respaldar
+        </button>
+        <label title="Cargar archivo de respaldo .json" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-400 font-bold px-2.5 py-1.5 rounded-lg transition cursor-pointer">
+          📥 Restaurar
+          <input type="file" accept=".json" onchange="importBackupJSON(event)" class="hidden">
+        </label>
+        <button onclick="toggleQuickSyncModal()" title="Pasar datos por texto entre celular y PC" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-amber-400 font-bold px-2.5 py-1.5 rounded-lg transition">
+          📲 Código Rápido
+        </button>
+      </div>
+
+      <!-- Barra de Navegación (5 Módulos) -->
+      <div class="w-full lg:w-auto flex flex-wrap bg-slate-800 p-1 rounded-xl border border-slate-700 gap-1">
+        <button id="tabBtnMenu" onclick="switchTab('menu')" class="px-3 py-1.5 rounded-lg text-xs transition tab-active">
+          📋 Menú (5 Comidas)
+        </button>
+        <button id="tabBtnCalc" onclick="switchTab('calc')" class="px-3 py-1.5 rounded-lg text-xs transition tab-inactive">
+          🥗 Calculadora
+        </button>
+        <button id="tabBtnShop" onclick="switchTab('shop')" class="px-3 py-1.5 rounded-lg text-xs transition tab-inactive">
+          🛒 Compras
+        </button>
+        <button id="tabBtnProgress" onclick="switchTab('progress')" class="px-3 py-1.5 rounded-lg text-xs transition tab-inactive">
+          📈 Progreso (4 Sem)
+        </button>
+        <button id="tabBtnHealth" onclick="switchTab('health')" class="px-3 py-1.5 rounded-lg text-xs transition tab-inactive">
+          ❤️ Google Health
+        </button>
+      </div>
+    </div>
+
+    <!-- Modal / Panel Desplegable de Sincronización por Código Rápido -->
+    <div id="quickSyncModal" class="hidden bg-slate-950 border-t border-slate-800 px-4 py-3 no-print">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3 text-xs">
+        <div class="text-slate-300">
+          <strong class="text-amber-400">Sincronización Rápida sin Archivos:</strong> Copia este código para enviarlo por WhatsApp a tu otro dispositivo, o pega aquí el código para restaurar.
+        </div>
+        <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          <input id="quickSyncInput" type="text" placeholder="Pega aquí tu código de respaldo..." class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-white text-xs flex-1 md:w-64">
+          <button onclick="copyQuickSyncCode()" class="bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg">Copiar mi código</button>
+          <button onclick="restoreQuickSyncCode()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-3 py-1.5 rounded-lg">Cargar código</button>
+          <button onclick="toggleQuickSyncModal()" class="text-slate-400 hover:text-white px-2">✕</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aviso flotante de respaldos -->
+    <div id="backupToast" class="hidden bg-emerald-500/20 border-t border-emerald-500/40 text-emerald-300 text-xs font-bold text-center py-1.5"></div>
+
+    <!-- Barra flotante de macros en tiempo real -->
+    <div class="bg-slate-950/90 border-t border-slate-800/80 py-2 px-4">
+      <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2 text-xs">
+        <div class="flex items-center gap-2">
+          <span class="text-slate-400 font-semibold">Selección actual del día:</span>
+          <div id="topBarMixPills" class="flex flex-wrap gap-1"></div>
+        </div>
+        <div class="flex items-center gap-4 font-bold">
+          <span class="text-emerald-400">Total Día: <span id="topBarKcal">0</span> kcal</span>
+          <span class="text-blue-400">P: <span id="topBarP">0</span>g</span>
+          <span class="text-amber-400">C: <span id="topBarC">0</span>g</span>
+          <span class="text-rose-400">G: <span id="topBarF">0</span>g</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==================== VISTA 0: MENÚ DETALLADO A LA CARTA ==================== -->
+  <section id="viewMenu" class="max-w-7xl mx-auto px-4 mt-6 space-y-6">
+    <div class="card p-5 flex flex-wrap justify-between items-center gap-4">
+      <div>
+        <h2 class="text-lg font-extrabold text-white">Menú Interactivo por Tiempos de Comida</h2>
+        <p class="text-xs text-slate-400 mt-0.5">
+          Haz clic en cualquier tarjeta para elegir ese plato en tu día. Puedes combinar cualquier opción (ej. <strong>Almuerzo Op. 1 + Merienda Op. 3</strong>).
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2 no-print">
+        <button onclick="filterMenuMeal('all')" id="filter-all" class="text-xs px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold">Ver las 5 Comidas</button>
+        <button onclick="filterMenuMeal(0)" id="filter-0" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">1. Desayunos</button>
+        <button onclick="filterMenuMeal(1)" id="filter-1" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">2. Media Mañana</button>
+        <button onclick="filterMenuMeal(2)" id="filter-2" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">3. Almuerzos</button>
+        <button onclick="filterMenuMeal(3)" id="filter-3" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">4. Media Tarde</button>
+        <button onclick="filterMenuMeal(4)" id="filter-4" class="text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700">5. Meriendas</button>
+        <button onclick="window.print()" class="text-xs px-3 py-1.5 rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-300 font-bold">🖨️ Imprimir Menú</button>
+      </div>
+    </div>
+
+    <div id="interactiveMenuContainer" class="space-y-8"></div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="card p-5">
+        <h3 class="text-sm font-extrabold text-emerald-400 uppercase tracking-wider mb-2">🥗 Cómo Armar tu Ensalada (Anexo)</h3>
+        <ul class="text-xs text-slate-300 space-y-2">
+          <li>• <strong>Paso 1 (Vegetal Base de Hojas):</strong> Lechuga, repollo, rúcula, escarola, espinaca, achicoria, etc.</li>
+          <li>• <strong>Paso 2 (Vegetal de Pulpa Crujiente):</strong> Tomate, zanahoria, pepino, cebolla, zuquini, rabanito, palmitos, brócoli, espárragos, zapallito o calabaza.</li>
+          <li>• <strong>Paso 3 (Aderezo):</strong> Limón, vinagre, condimentos y sal sin excederse. <em>Solo usar aceite de oliva si el tiempo de comida lo indica expresamente.</em></li>
+        </ul>
+      </div>
+      <div class="card p-5">
+        <h3 class="text-sm font-extrabold text-sky-400 uppercase tracking-wider mb-2">🏷️ Marcas Recomendadas para Compra</h3>
+        <div class="grid grid-cols-2 gap-2 text-xs text-slate-300">
+          <div>• <strong>Queso bajo en grasa:</strong> La Holandesa, Supermaxi, Kiosco</div>
+          <div>• <strong>Yogurt Griego:</strong> Casero, Zeus, Karuu, El Tokte</div>
+          <div>• <strong>Panes:</strong> Masa madre Supermaxi, Supan/Moderna/Bimbo integral</div>
+          <div>• <strong>Tortillas:</strong> Dellmex (maíz), Mama Fanny/Bimbo/Mayas (trigo), Soul Foods (verde)</div>
+          <div>• <strong>Avena y Snacks:</strong> Quaker, Schullo, Dr. Muller, Crackeñas</div>
+          <div>• <strong>Grasas y Atún:</strong> Olivo La Española (vidrio), Maní Life Choice/LIV/Karay, Atún Real Light</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== VISTA 1: CALCULADORA DIARIA ==================== -->
+  <main id="viewCalc" class="max-w-7xl mx-auto px-4 mt-6 hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="space-y-6">
+      <div class="card p-5 lg:sticky lg:top-28">
+        <div class="flex justify-between items-center mb-3">
+          <h2 class="text-lg font-bold text-white">Balance del Día</h2>
+          <div class="flex gap-2 text-xs">
+            <button onclick="checkAllMeals(true)" class="text-emerald-400 hover:underline font-medium">Marcar todo</button>
+            <span class="text-slate-600">|</span>
+            <button onclick="checkAllMeals(false)" class="text-slate-400 hover:underline">Limpiar</button>
+          </div>
+        </div>
+
+        <div id="activeMixSummary" class="flex flex-wrap gap-1.5 mb-4"></div>
+
+        <div class="text-center py-4 bg-slate-900/70 rounded-xl border border-slate-800 mb-5">
+          <p class="text-xs uppercase tracking-wider text-slate-400">Calorías Consumidas / Planificadas</p>
+          <div class="text-3xl font-black text-emerald-400 mt-1">
+            <span id="calConsumed">0</span> <span class="text-lg font-normal text-slate-400">/ <span id="calTotal">0</span> kcal</span>
+          </div>
+          <p id="calDiff" class="text-[11px] text-slate-400 mt-1"></p>
+        </div>
+
+        <div class="space-y-4 mb-6">
+          <div>
+            <div class="flex justify-between text-xs font-semibold mb-1">
+              <span class="text-blue-400">Proteínas</span>
+              <span><span id="protConsumed">0</span>g / <span id="protTotal">0</span>g</span>
+            </div>
+            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+              <div id="protBar" class="bg-blue-500 h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-semibold mb-1">
+              <span class="text-amber-400">Carbohidratos</span>
+              <span><span id="carbConsumed">0</span>g / <span id="carbTotal">0</span>g</span>
+            </div>
+            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+              <div id="carbBar" class="bg-amber-500 h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-semibold mb-1">
+              <span class="text-rose-400">Grasas</span>
+              <span><span id="fatConsumed">0</span>g / <span id="fatTotal">0</span>g</span>
+            </div>
+            <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+              <div id="fatBar" class="bg-rose-500 h-full transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-800 pt-4">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-sm font-bold text-white">Agua Diaria (3 - 3.5 L)</span>
+            <span id="waterText" class="text-xs font-bold text-sky-400">0.00 / 3.50 L</span>
+          </div>
+          <div class="grid grid-cols-7 gap-1.5 mb-3" id="waterGlasses"></div>
+          
+          <div class="flex items-center justify-between bg-slate-900/60 p-2.5 rounded-lg border border-slate-800 text-xs mb-3">
+            <div>
+              <span class="font-bold text-emerald-400 block">Suerox / Electrolitos s/azúcar</span>
+              <span class="text-[11px] text-slate-400">1 a 2 veces por semana</span>
+            </div>
+            <input type="checkbox" id="sueroxCheck" onchange="saveState()" class="w-4 h-4 accent-emerald-500 rounded cursor-pointer">
+          </div>
+
+          <button onclick="switchTab('health')" class="w-full py-2.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 font-bold text-xs transition">
+            ❤️ Ver Resumen para Google Health →
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-2 space-y-4">
+      <div class="card p-4 flex flex-wrap justify-between items-center gap-3">
+        <div class="flex items-center gap-2">
+          <label class="text-xs text-slate-300 font-semibold">Cargar opción en todo el día:</label>
+          <select id="masterSelector" onchange="applyAllOptions(this.value)" class="bg-slate-800 border border-slate-600 text-white text-xs rounded-lg px-3 py-2 font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="custom" disabled>⚡ Combinación Personalizada (Mix)</option>
+            <option value="1">Todo Opción 1 (Arroz c/huevo + Seco Pollo)</option>
+            <option value="2">Todo Opción 2 (Masa Madre + Lomo Res)</option>
+            <option value="3">Todo Opción 3 (Mote Pillo + Pollo c/Papa)</option>
+            <option value="4">Todo Opción 4 (Tigrillo Verde + Salmón)</option>
+            <option value="5">Todo Opción 5 (Tigrillo Pintón + Pollo c/Fideo)</option>
+            <option value="6">Todo Opción 6 (Tortilla Avena + Corvina + Bowl)</option>
+            <option value="7">Todo Opción 7 (Café c/Leche + Pollo Apanado + Tacos)</option>
+          </select>
+        </div>
+        <button onclick="setExampleMix()" class="text-xs bg-emerald-600/30 hover:bg-emerald-600/50 border border-emerald-500/40 text-emerald-300 font-bold px-3 py-2 rounded-lg transition">
+          Ej: C3(Op.1) + C5(Op.3)
+        </button>
+      </div>
+
+      <div id="mealsContainer" class="space-y-4"></div>
+    </div>
+  </main>
+
+  <!-- ==================== VISTA 2: PLANIFICADOR SEMANAL Y LISTA DE COMPRAS ==================== -->
+  <section id="viewShop" class="max-w-7xl mx-auto px-4 mt-6 hidden space-y-6">
+    <div class="card p-5">
+      <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+        <div>
+          <h2 class="text-lg font-bold text-white">1. Arma tu Semana (Lunes a Domingo)</h2>
+          <p class="text-xs text-slate-400">Elige qué Opción (1 a 7) comerás en cada comida de la semana.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button onclick="copyDayMixToWeek()" class="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-3 py-2 rounded-lg transition">
+            📌 Repetir mi combinación actual en Lunes-Viernes
+          </button>
+          <button onclick="setVariedWeek()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-semibold px-3 py-2 rounded-lg transition">
+            🔄 Semana variada (Op. 1 a 7)
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="border-b border-slate-700 text-slate-400">
+              <th class="py-2.5 px-2">Día</th>
+              <th class="py-2.5 px-2">Todo el día</th>
+              <th class="py-2.5 px-2">C1: Desayuno</th>
+              <th class="py-2.5 px-2">C2: Media Mañana</th>
+              <th class="py-2.5 px-2">C3: Almuerzo</th>
+              <th class="py-2.5 px-2">C4: Media Tarde</th>
+              <th class="py-2.5 px-2">C5: Merienda</th>
+            </tr>
+          </thead>
+          <tbody id="weekTableBody" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+        <div>
+          <h2 class="text-lg font-bold text-white">2. Lista de Compras Semanal Exacta</h2>
+          <p class="text-xs text-slate-400">Cantidades sumadas de tus 35 comidas semanales + marcas recomendadas en tu PDF Mentum.</p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="clearCheckedShop()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg">
+            Desmarcar todo
+          </button>
+          <button onclick="copyShoppingList()" class="text-xs bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-4 py-2 rounded-lg transition">
+            📲 Copiar Lista para WhatsApp
+          </button>
+        </div>
+      </div>
+
+      <div id="copyFeedback" class="hidden mb-4 p-2.5 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-semibold text-center">
+        ✅ ¡Lista copiada al portapapeles!
+      </div>
+
+      <div id="shoppingCategories" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </div>
+  </section>
+
+  <!-- ==================== VISTA 3: PROGRESO CORPORAL Y MEDIDAS (4 SEMANAS) ==================== -->
+  <section id="viewProgress" class="max-w-7xl mx-auto px-4 mt-6 hidden space-y-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="card p-4 bg-slate-900/70">
+        <span class="text-[11px] font-bold uppercase text-slate-400">Peso Inicial vs Actual</span>
+        <div class="text-2xl font-black text-white mt-1" id="kpiWeight">-- kg</div>
+        <span class="text-xs text-emerald-400 font-semibold" id="kpiWeightDiff">Registra tus pesajes</span>
+      </div>
+      <div class="card p-4 bg-slate-900/70">
+        <span class="text-[11px] font-bold uppercase text-slate-400">Cintura (Ombligo)</span>
+        <div class="text-2xl font-black text-white mt-1" id="kpiWaist">-- cm</div>
+        <span class="text-xs text-sky-400 font-semibold" id="kpiWaistDiff">Control de ganancia limpia</span>
+      </div>
+      <div class="card p-4 bg-slate-900/70">
+        <span class="text-[11px] font-bold uppercase text-slate-400">Brazo / Torso</span>
+        <div class="text-2xl font-black text-white mt-1" id="kpiArm">-- cm</div>
+        <span class="text-xs text-amber-400 font-semibold" id="kpiArmDiff">Hipertrofia muscular</span>
+      </div>
+      <div class="card p-4 bg-slate-900/70">
+        <span class="text-[11px] font-bold uppercase text-slate-400">Sueño Promedio (Meta 7-8h)</span>
+        <div class="text-2xl font-black text-emerald-400 mt-1" id="kpiSleep">-- hrs</div>
+        <span class="text-xs text-slate-400" id="kpiSleepStatus">Clave para ganar masa muscular</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="card p-5 space-y-4">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Etapa 1.2 • Control Mensual</span>
+          <h2 class="text-lg font-bold text-white mt-0.5">Registrar Chequeo Corporal</h2>
+          <p class="text-xs text-slate-400">Pésate en ayunas, después de ir al baño y con la misma ropa.</p>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Semana del Plan:</label>
+            <select id="progWeek" onchange="loadWeekToForm(this.value)" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white font-semibold">
+              <option value="0">Día 1 (Inicio Etapa 1.2)</option>
+              <option value="1">Semana 1</option>
+              <option value="2">Semana 2</option>
+              <option value="3">Semana 3</option>
+              <option value="4">Semana 4 (Cierre del Mes)</option>
+            </select>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Fecha:</label>
+              <input type="date" id="progDate" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white">
+            </div>
+            <div>
+              <label class="block text-emerald-400 font-bold mb-1">Peso en ayunas (kg):</label>
+              <input type="number" step="0.1" id="progWeight" placeholder="Ej: 74.5" class="w-full bg-slate-800 border border-emerald-500/50 rounded-lg px-2.5 py-2 text-white font-bold">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Cintura (cm):</label>
+              <input type="number" step="0.1" id="progWaist" placeholder="Ej: 81.0" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white">
+            </div>
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Brazo (cm):</label>
+              <input type="number" step="0.1" id="progArm" placeholder="Ej: 37.5" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white">
+            </div>
+            <div>
+              <label class="block text-slate-300 font-semibold mb-1">Sueño (hrs):</label>
+              <input type="number" step="0.5" id="progSleep" placeholder="7.5" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-2 text-white">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-slate-300 font-semibold mb-1">Notas (Energía en entrenos, digestión, saciedad):</label>
+            <input type="text" id="progNotes" placeholder="Ej: Buen rendimiento en CrossFit, sin llenura" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-white">
+          </div>
+
+          <button onclick="saveProgressEntry()" class="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
+            💾 Guardar Registro de esta Semana
+          </button>
+        </div>
+      </div>
+
+      <div class="lg:col-span-2 space-y-6">
+        <div class="card p-5">
+          <div class="flex flex-wrap justify-between items-center gap-2 mb-3">
+            <div>
+              <h3 class="text-base font-bold text-white">Curva de Peso Corporal (Etapa 1.2)</h3>
+              <p class="text-xs text-slate-400">Objetivo: Superávit limpio y sostenido ("Lo que se construye en silencio, se nota en el espejo").</p>
+            </div>
+            <button onclick="copyProgressReport()" class="text-xs bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/40 text-sky-300 font-bold px-3 py-1.5 rounded-lg transition">
+              📲 Copiar Reporte Mensual
+            </button>
+          </div>
+
+          <div id="progCopyFeedback" class="hidden mb-3 p-2 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs text-center font-semibold">
+            ✅ ¡Reporte de progreso copiado al portapapeles!
+          </div>
+
+          <div id="weightChartBox" class="w-full h-44 bg-slate-900/70 rounded-xl border border-slate-800 flex items-center justify-center p-3"></div>
+        </div>
+
+        <div class="card p-5">
+          <h3 class="text-sm font-bold text-white mb-3">Historial de Chequeos del Mes</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="border-b border-slate-700 text-slate-400">
+                  <th class="py-2 px-2">Etapa</th>
+                  <th class="py-2 px-2">Fecha</th>
+                  <th class="py-2 px-2">Peso (kg)</th>
+                  <th class="py-2 px-2">Cintura (cm)</th>
+                  <th class="py-2 px-2">Brazo (cm)</th>
+                  <th class="py-2 px-2">Sueño (h)</th>
+                  <th class="py-2 px-2">Notas</th>
+                  <th class="py-2 px-2 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="progressTableBody" class="divide-y divide-slate-800"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==================== VISTA 4: SINCRONIZACIÓN CON GOOGLE HEALTH ==================== -->
+  <section id="viewHealth" class="max-w-7xl mx-auto px-4 mt-6 hidden space-y-6">
+    <div class="card p-5">
+      <div class="flex flex-wrap justify-between items-start gap-4 mb-4">
+        <div>
+          <span class="text-xs font-bold uppercase tracking-wider text-sky-400">Integración con Google Health & Health Connect</span>
+          <h2 class="text-lg font-bold text-white mt-0.5">Registro Rápido (Quick Logging) del Día</h2>
+          <p class="text-xs text-slate-400 mt-1">
+            Copia estos valores exactos de tu combinación actual para pegarlos en <strong>Google Health → Nutrición → Quick Log</strong>.
+          </p>
+        </div>
+        <button onclick="downloadHealthCSV()" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold px-3.5 py-2 rounded-lg transition">
+          📥 Descargar CSV de Hoy
+        </button>
+      </div>
+
+      <div id="healthCopyToast" class="hidden mb-4 p-2.5 rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-300 text-xs font-semibold text-center">
+        ✅ ¡Datos copiados al portapapeles! Pégalos en Google Health.
+      </div>
+
+      <div class="bg-slate-900/90 border border-sky-500/40 rounded-xl p-4 mb-5 flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <span class="text-xs font-bold text-sky-400 uppercase">Total del Día (Comidas Marcadas)</span>
+          <h3 class="text-xl font-black text-white mt-0.5" id="ghTotalTitle">0 kcal</h3>
+          <p class="text-xs text-slate-400 mt-0.5" id="ghWaterSummary">Hidratación registrada: 0 ml</p>
+        </div>
+        <div class="flex flex-wrap gap-3 text-center">
+          <div class="bg-slate-800 px-3.5 py-2 rounded-lg border border-slate-700">
+            <span class="text-[10px] text-blue-400 font-bold block uppercase">Proteína</span>
+            <span id="ghTotalP" class="text-base font-extrabold text-white">0 g</span>
+          </div>
+          <div class="bg-slate-800 px-3.5 py-2 rounded-lg border border-slate-700">
+            <span class="text-[10px] text-amber-400 font-bold block uppercase">Carbohidratos</span>
+            <span id="ghTotalC" class="text-base font-extrabold text-white">0 g</span>
+          </div>
+          <div class="bg-slate-800 px-3.5 py-2 rounded-lg border border-slate-700">
+            <span class="text-[10px] text-rose-400 font-bold block uppercase">Grasas</span>
+            <span id="ghTotalF" class="text-base font-extrabold text-white">0 g</span>
+          </div>
+          <div class="bg-slate-800 px-3.5 py-2 rounded-lg border border-slate-700">
+            <span class="text-[10px] text-sky-400 font-bold block uppercase">Agua</span>
+            <span id="ghTotalW" class="text-base font-extrabold text-white">0 ml</span>
+          </div>
+        </div>
+        <button onclick="copyMealForHealth('total')" class="bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-lg transition">
+          📋 Copiar Resumen Diario
+        </button>
+      </div>
+
+      <div id="ghMealsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5"></div>
+    </div>
+  </section>
+
+  <script>
+    const mealNames = [
+      "COMIDA 1: Desayuno",
+      "COMIDA 2: Media Mañana",
+      "COMIDA 3: Almuerzo",
+      "COMIDA 4: Media Tarde (Pre-Entreno)",
+      "COMIDA 5: Merienda / Cena"
+    ];
+
+    const ghMealTypes = [
+      "Breakfast (Desayuno)",
+      "Morning Snack (Media Mañana)",
+      "Lunch (Almuerzo)",
+      "Afternoon Snack (Media Tarde)",
+      "Dinner (Merienda / Cena)"
+    ];
+
+    const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+    const progressWeekLabels = [
+      "Día 1 (Inicio Etapa 1.2)",
+      "Semana 1",
+      "Semana 2",
+      "Semana 3",
+      "Semana 4 (Cierre Mes)"
+    ];
+
+    const meal2Standard = (optNum) => ({
+      optLabel: `Opción ${optNum}: Fruta + frutos secos + carbohidrato`,
+      subtitle: "Escoger 1 fruta + 1 fruto seco + 1 carbohidrato (Dr. Muller / Avena / Corn Flakes)",
+      badgeNote: "Estándar Opciones 1, 3, 4, 5, 6 y 7",
+      bullets: [
+        "<strong>Fruta (escoger 1):</strong> 180g manzana verde/naranja/mandarina, 190g mango, 300g fresas/sandía, 200g kiwi/papaya, 310g melón ó 160g uvas.",
+        "<strong>Frutos secos (escoger 1):</strong> 15g de nueces ó 17g de almendras/pistachos sin cáscara.",
+        "<strong>Carbohidrato (escoger 1):</strong> 3 tortas de arroz 'Dr. Muller', 1 funda galletas saborizadas ('mango' o 'manzana y canela') 'Dr. Muller', 20g avena ó 15g Corn Flakes."
+      ],
+      groups: [
+        {
+          label: "Escoger 1 Fruta:",
+          options: [
+            { name: "180 gr de manzana verde, naranja ó mandarina", kcal: 94, p: 0.5, c: 25, f: 0.3 },
+            { name: "190 gr de mango", kcal: 114, p: 1.5, c: 28, f: 0.7 },
+            { name: "300 gr de fresas ó sandía", kcal: 96, p: 2, c: 23, f: 0.9 },
+            { name: "200 gr de kiwi ó papaya", kcal: 86, p: 1, c: 22, f: 0.5 },
+            { name: "310 gr de melón", kcal: 105, p: 2.5, c: 25, f: 0.6 },
+            { name: "160 gr de uvas", kcal: 110, p: 1.1, c: 29, f: 0.3 }
+          ]
+        },
+        {
+          label: "Escoger 1 Grasa Saludable:",
+          options: [
+            { name: "15 gr de nueces", kcal: 98, p: 2.3, c: 2, f: 9.8 },
+            { name: "17 gr de almendras o pistachos sin cáscara", kcal: 98, p: 3.6, c: 3.7, f: 8.5 }
+          ]
+        },
+        {
+          label: "Escoger 1 Carbohidrato:",
+          options: [
+            { name: "3 unidades de tortas de arroz 'Dr. Muller'", kcal: 85, p: 1.8, c: 18, f: 0.6 },
+            { name: "1 funda galletas saborizadas 'Mango / Manzana y Canela' Dr. Muller", kcal: 90, p: 1.5, c: 19, f: 0.8 },
+            { name: "20 gr de avena en hojuelas", kcal: 76, p: 2.7, c: 13.5, f: 1.4 },
+            { name: "15 gr de Corn Flakes sin azúcar añadida", kcal: 56, p: 1.1, c: 13, f: 0.1 }
+          ]
+        }
+      ]
+    });
+
+    const meal4Standard = (optNum) => ({
+      optLabel: `Opción ${optNum}: Banano con avena, máchica, corn flakes o galletas`,
+      subtitle: "Fines de semana se puede unir con almuerzo o merienda",
+      badgeNote: "Pre-Entreno Habitual",
+      bullets: [
+        "<strong>Carbohidrato base (escoger 1):</strong> 60g avena Quaker, 50g máchica, 6 unidades galletas de arroz ó 40g Corn Flakes.",
+        "<strong>Topping de fruta (escoger 1):</strong> 120g de guineo/orito/plátano maduro ó 200g de papaya/piña."
+      ],
+      groups: [
+        {
+          label: "Base de Carbohidrato:",
+          options: [
+            { name: "60 gr de avena Quaker", kcal: 228, p: 8, c: 40.5, f: 4.2 },
+            { name: "50 gr de máchica", kcal: 177, p: 5.5, c: 37, f: 1.3 },
+            { name: "6 unidades de galletas de arroz", kcal: 170, p: 3.6, c: 36, f: 1.2 },
+            { name: "40 gr de Corn Flakes", kcal: 150, p: 3, c: 34.8, f: 0.2 }
+          ]
+        },
+        {
+          label: "Topping de Fruta:",
+          options: [
+            { name: "120 gr de guineo / orito / plátano maduro", kcal: 108, p: 1.3, c: 27, f: 0.4 },
+            { name: "200 gr de papaya ó piña", kcal: 92, p: 1, c: 23, f: 0.3 }
+          ]
+        }
+      ]
+    });
+
+    const catalogByMeal = [
+      // COMIDA 1
+      {
+        1: {
+          optLabel: "Opción 1: Arroz con huevo y salsa de tomate + fruta",
+          subtitle: "Arroz con huevo y salsa de tomate 'Hunts' + fruta con yogurt y avena",
+          badgeNote: "Desayuno Salado & Fruta",
+          bullets: [
+            "<strong>Base:</strong> 100 gr de arroz cocinado + 10 gr de salsa de tomate 'Hunts'.",
+            "<strong>Proteína:</strong> 2 huevos enteros + 2 claras (ó 30g pollo cocinado de la merienda) + 1/4 taza cebolla blanca y verde.",
+            "<strong>Bowl Dulce:</strong> 220g papaya/mango (ó 120g guineo/orito) + 50g yogurt griego casero + 20g avena Quaker cruda (ó 15g Corn Flakes s/azúcar)."
+          ],
+          groups: [
+            { label: "Base:", options: [{ name: "100 gr de arroz cocinado + 10 gr salsa de tomate 'Hunts'", kcal: 140, p: 2.8, c: 30.5, f: 0.3 }] },
+            { label: "Proteína:", options: [
+              { name: "2 huevos enteros + 2 claras + 1/4 taza cebolla blanca y verde", kcal: 178, p: 19.5, c: 2, f: 10 },
+              { name: "2 huevos enteros + 30 gr pollo cocinado (sobra merienda) + cebolla", kcal: 195, p: 21.5, c: 1.5, f: 11 }
+            ]},
+            { label: "Fruta + Yogurt Griego:", options: [
+              { name: "220 gr de papaya ó mango + 50 gr yogurt griego casero", kcal: 145, p: 6, c: 27, f: 1.5 },
+              { name: "120 gr de guineo/orito + 50 gr yogurt griego casero", kcal: 155, p: 6.2, c: 30, f: 1.5 }
+            ]},
+            { label: "Cereal:", options: [
+              { name: "20 gr de avena Quaker (en crudo)", kcal: 76, p: 2.7, c: 13.5, f: 1.4 },
+              { name: "15 gr de Corn Flakes 'Kelloggs' sin azúcar añadida", kcal: 56, p: 1.1, c: 13, f: 0.1 }
+            ]}
+          ]
+        },
+        2: {
+          optLabel: "Opción 2: Huevos revueltos + pan tostado + jugo verde",
+          subtitle: "Pan masa madre/integral untado con yogurt griego + jugo verde con 40g avena",
+          badgeNote: "Con Jugo Verde Licuado",
+          bullets: [
+            "<strong>Huevos:</strong> 1 huevo entero + 4 claras + cebolla o champiñones picados.",
+            "<strong>Pan y Untable:</strong> 60g pan de masa madre (ó 2 rodajas pan integral Supan/Moderna/Bimbo) + 50g yogurt griego untado (con sal y ajo en polvo).",
+            "<strong>Jugo Verde:</strong> 90g manzana verde + 100g piña (ó 60g guineo) + 2 puñados espinaca + 1/2 pepinillo + 1 apio + 1/2 limón + 40g avena + agua."
+          ],
+          groups: [
+            { label: "Proteína:", options: [{ name: "1 huevo entero + 4 claras + cebolla o champiñones picados", kcal: 145, p: 21, c: 2, f: 5 }] },
+            { label: "Pan + Untable:", options: [
+              { name: "60 gr pan de masa madre + 50 gr yogurt griego untado (sal y ajo)", kcal: 195, p: 10.5, c: 33, f: 2 },
+              { name: "2 rodajas pan integral (Supan/Moderna/Bimbo) + 50 gr yogurt griego", kcal: 190, p: 11, c: 31, f: 2.5 }
+            ]},
+            { label: "Jugo Verde:", options: [
+              { name: "90g manzana verde + 100g piña + espinaca, pepinillo, apio, limón + 40g avena", kcal: 265, p: 7, c: 53, f: 3 },
+              { name: "90g manzana verde + 60g guineo + espinaca, pepinillo, apio, limón + 40g avena", kcal: 270, p: 7.2, c: 54, f: 3 }
+            ]}
+          ]
+        },
+        3: {
+          optLabel: "Opción 3: Mote pillo + jugo verde",
+          subtitle: "110g mote con 2 huevos y 4 claras + jugo verde con 40g avena",
+          badgeNote: "Tradicional Proteico",
+          bullets: [
+            "<strong>Base:</strong> 110g de mote cocinado sin cáscara ó mote choclo (ó 130g de arroz cocinado).",
+            "<strong>Proteína:</strong> 2 huevos enteros + 4 claras + 1/4 taza cebolla blanca y verde.",
+            "<strong>Jugo Verde:</strong> 90g manzana verde + 100g piña (ó 60g guineo) + 2 puñados espinaca + 1/2 pepinillo + 1 apio + 1/2 limón + 40g avena + agua."
+          ],
+          groups: [
+            { label: "Carbohidrato:", options: [
+              { name: "110 gr de mote cocinado sin cáscara ó mote choclo", kcal: 165, p: 4, c: 35, f: 1.2 },
+              { name: "130 gr de arroz cocinado", kcal: 169, p: 3.5, c: 36.4, f: 0.4 }
+            ]},
+            { label: "Proteína:", options: [{ name: "2 huevos enteros + 4 claras + 1/4 taza cebolla blanca y verde", kcal: 212, p: 26.5, c: 2, f: 10 }] },
+            { label: "Jugo Verde:", options: [
+              { name: "90g manzana verde + 100g piña + espinaca, pepinillo, apio, limón + 40g avena", kcal: 265, p: 7, c: 53, f: 3 },
+              { name: "90g manzana verde + 60g guineo + espinaca, pepinillo, apio, limón + 40g avena", kcal: 270, p: 7.2, c: 54, f: 3 }
+            ]}
+          ]
+        },
+        4: {
+          optLabel: "Opción 4: Tigrillo o panqueque de verde con huevo",
+          subtitle: "200g plátano verde cocinado con huevos + queso La Holandesa + fruta",
+          badgeNote: "Alto en Energía",
+          bullets: [
+            "<strong>Tigrillo:</strong> 200g plátano verde cocinado + 2 huevos enteros + 2 claras + cebolla blanca/verde, sal, ajo, perejil y cilantro.",
+            "<strong>Lácteo:</strong> 30g queso bajo en grasa 'La Holandesa' (ó 50g yogurt con la fruta).",
+            "<strong>Fruta:</strong> 200g piña o papaya (ó 180g guayaba/mandarina/naranja)."
+          ],
+          groups: [
+            { label: "Base de Verde + Huevo:", options: [{ name: "200 gr plátano verde cocinado + 2 huevos enteros + 2 claras + cebolla y cilantro", kcal: 415, p: 22, c: 58, f: 10.5 }] },
+            { label: "Lácteo:", options: [
+              { name: "30 gr queso bajo en grasa 'La Holandesa'", kcal: 75, p: 7.5, c: 1, f: 4.5 },
+              { name: "50 gr de yogurt griego con la fruta", kcal: 50, p: 5, c: 2.5, f: 1.2 }
+            ]},
+            { label: "Fruta:", options: [{ name: "200 gr de piña o papaya ó 180 gr guayaba/mandarina/naranja", kcal: 90, p: 1.2, c: 22, f: 0.3 }] }
+          ]
+        },
+        5: {
+          optLabel: "Opción 5: Tigrillo de pintón (verde + maduro) con huevo",
+          subtitle: "150g verde + 100g maduro cocinados + huevos + queso/yogurt + fruta",
+          badgeNote: "Mix Verde + Maduro",
+          bullets: [
+            "<strong>Tigrillo Pintón:</strong> 150g plátano verde cocinado + 100g plátano maduro cocinado + 2 huevos enteros + 2 claras + cebolla, ajo y perejil.",
+            "<strong>Lácteo:</strong> 30g queso bajo en grasa 'La Holandesa' (ó 50g yogurt con la fruta).",
+            "<strong>Fruta:</strong> 100g piña o papaya (ó 180g fresas/sandía)."
+          ],
+          groups: [
+            { label: "Tigrillo Mixto:", options: [{ name: "150 gr plátano verde + 100 gr plátano maduro cocinados + 2 huevos + 2 claras", kcal: 480, p: 22.5, c: 74, f: 10.6 }] },
+            { label: "Lácteo + Fruta:", options: [
+              { name: "30 gr queso bajo en grasa 'La Holandesa' + 100g piña/papaya (o 180g fresas/sandía)", kcal: 120, p: 8, c: 12, f: 4.7 },
+              { name: "50 gr yogurt griego + 100g piña/papaya (o 180g fresas/sandía)", kcal: 95, p: 5.5, c: 13.5, f: 1.4 }
+            ]}
+          ]
+        },
+        6: {
+          optLabel: "Opción 6: Tortilla o panqueque de avena y huevo",
+          subtitle: "Tortilla con 80g avena y huevos + topping de orito/guineo y yogurt",
+          badgeNote: "Rápido y Dulce",
+          bullets: [
+            "<strong>Tortilla:</strong> Mezclar y cocinar 2 huevos enteros + 2 claras + 80g de avena Quaker (en crudo).",
+            "<strong>Topping por arriba:</strong> 120g de guineo u orito (recomendación: orito) + 50g de yogurt griego casero."
+          ],
+          groups: [
+            { label: "Tortilla:", options: [{ name: "2 huevos enteros + 2 claras + 80 gr avena Quaker (en crudo)", kcal: 482, p: 30.3, c: 56, f: 15.6 }] },
+            { label: "Topping:", options: [{ name: "120 gr de guineo/orito + 50 gr de yogurt griego casero", kcal: 158, p: 6.3, c: 30, f: 1.5 }] }
+          ]
+        },
+        7: {
+          optLabel: "Opción 7: Huevos revueltos + café con leche / TRÜ y pan",
+          subtitle: "Huevos + pan + leche deslactosada o TRÜ Protein + fruta y avena",
+          badgeNote: "Opción con Leche TRÜ",
+          bullets: [
+            "<strong>Salado:</strong> 2 huevos enteros + 2 claras con 1/4 taza vegetales + 30g pan masa madre (ó 1 rodaja pan integral).",
+            "<strong>Lácteo + Avena:</strong> 200 ml leche deslactosada c/café + 60g avena Quaker (ó incluir leche chocolatada 'TRÜ' y bajar a 40g de avena).",
+            "<strong>Fruta:</strong> 220g de papaya ó 120g de guineo/orito."
+          ],
+          groups: [
+            { label: "Huevos + Pan:", options: [{ name: "2 huevos enteros + 2 claras + vegetales + 30g pan masa madre (o 1 rodaja integral)", kcal: 255, p: 22.5, c: 17, f: 10.5 }] },
+            { label: "Lácteo + Avena:", options: [
+              { name: "200 ml leche deslactosada c/café + 60 gr avena Quaker", kcal: 318, p: 14.5, c: 50, f: 6.2 },
+              { name: "Leche chocolatada 'TRÜ Protein' + 40 gr avena Quaker", kcal: 310, p: 24, c: 41, f: 5 }
+            ]},
+            { label: "Fruta:", options: [{ name: "220 gr de papaya ó 120 gr de guineo/orito", kcal: 102, p: 1.2, c: 25, f: 0.3 }] }
+          ]
+        }
+      },
+
+      // COMIDA 2
+      {
+        1: meal2Standard(1),
+        2: {
+          optLabel: "Opción 2: Guineo o papaya con avena y nueces",
+          subtitle: "120g guineo (o 200g papaya) + 20g avena + 15g nueces/almendras",
+          badgeNote: "Bowl Directo",
+          bullets: [
+            "<strong>Fruta:</strong> 120g de guineo/orito ó 200g de papaya.",
+            "<strong>Cereal + Grasa:</strong> 20g de avena Quaker + 15g de nueces o almendras."
+          ],
+          groups: [
+            { label: "Combinación directa:", options: [
+              { name: "120 gr de guineo/orito + 20 gr avena Quaker + 15 gr nueces/almendras", kcal: 282, p: 6.5, c: 42.5, f: 11.5 },
+              { name: "200 gr de papaya + 20 gr avena Quaker + 15 gr nueces/almendras", kcal: 260, p: 6, c: 37.5, f: 11.4 }
+            ]}
+          ]
+        },
+        3: meal2Standard(3),
+        4: meal2Standard(4),
+        5: meal2Standard(5),
+        6: meal2Standard(6),
+        7: meal2Standard(7)
+      },
+
+      // COMIDA 3
+      {
+        1: {
+          optLabel: "Opción 1: Seco de pollo (muslo/pierna) + arroz/maduro",
+          subtitle: "175g presas de pollo + 400g arroz (o 300g arroz + 100g maduro) + aguacate",
+          badgeNote: "Clásico Ecuatoriano",
+          bullets: [
+            "<strong>Proteína:</strong> 175g de presas de pollo (muslo, pierna) en crudo (160g cocinado aprox.) + tomate y cebolla para el seco.",
+            "<strong>Carbohidrato:</strong> 400g de arroz cocinado (ó 300g de arroz + 100g de plátano maduro cocido).",
+            "<strong>Grasa + Ensalada:</strong> 50g de aguacate (ó 15g nueces) + 1 plato sopero (2 tazas) de ensalada."
+          ],
+          groups: [
+            { label: "Proteína:", options: [{ name: "175 gr presas de pollo en crudo (160 gr cocido aprox) + tomate y cebolla", kcal: 295, p: 42, c: 3, f: 12.5 }] },
+            { label: "Carbohidrato:", options: [
+              { name: "400 gr de arroz cocinado", kcal: 520, p: 10.8, c: 112, f: 1.2 },
+              { name: "300 gr de arroz cocinado + 100 gr de plátano maduro cocido", kcal: 510, p: 9, c: 115, f: 1.1 }
+            ]},
+            { label: "Grasa + Ensalada (2 tazas):", options: [
+              { name: "50 gr de aguacate + 1 plato sopero de ensalada", kcal: 105, p: 2, c: 8, f: 7.5 },
+              { name: "15 gr de nueces + 1 plato sopero de ensalada", kcal: 123, p: 3.3, c: 6, f: 9.8 }
+            ]}
+          ]
+        },
+        2: {
+          optLabel: "Opción 2: Lomo de res a la plancha + arroz con menestra",
+          subtitle: "170g lomo de res + 340g arroz con 60g menestra (o 400g arroz) + aguacate",
+          badgeNote: "Carne Roja Magra",
+          bullets: [
+            "<strong>Proteína:</strong> 170g de lomo de res sin grasa visible en crudo (150g cocinado aprox.).",
+            "<strong>Carbohidrato:</strong> 340g de arroz cocinado + 60g de menestra de poroto o lenteja (ó 400g de solo arroz).",
+            "<strong>Grasa + Ensalada:</strong> 50g de aguacate (ó 15g nueces) + 1 plato sopero (2 tazas) de ensalada."
+          ],
+          groups: [
+            { label: "Proteína:", options: [{ name: "170 gr lomo de res magro en crudo (150 gr cocido aprox)", kcal: 255, p: 46, c: 0, f: 7.5 }] },
+            { label: "Carbohidrato:", options: [
+              { name: "340 gr arroz cocinado + 60 gr menestra de poroto o lenteja", kcal: 520, p: 14.5, c: 108, f: 1.8 },
+              { name: "400 gr de solo arroz cocinado", kcal: 520, p: 10.8, c: 112, f: 1.2 }
+            ]},
+            { label: "Grasa + Ensalada (2 tazas):", options: [
+              { name: "50 gr de aguacate + 1 plato sopero de ensalada", kcal: 105, p: 2, c: 8, f: 7.5 },
+              { name: "15 gr de nueces + 1 plato sopero de ensalada", kcal: 123, p: 3.3, c: 6, f: 9.8 }
+            ]}
+          ]
+        },
+        3: {
+          optLabel: "Opción 3: Tiras de pollo con vegetales + arroz con papa",
+          subtitle: "150g pechuga + 250g arroz/mote + 240g papa + aceite de oliva y aguacate",
+          badgeNote: "Doble Carbohidrato",
+          bullets: [
+            "<strong>Proteína y Salteado:</strong> 150g pechuga de pollo (140g cocinado) + 1 ½ plato de vegetales para saltear (pimientos, zanahoria, brócoli).",
+            "<strong>Carbohidrato:</strong> 250g de arroz o mote cocinado + 240g de papa cocinada.",
+            "<strong>Grasas + Ensalada:</strong> 2 cdtas al ras de aceite de oliva en frío (10 ml) + 50g aguacate (ó 15g nueces) + 1/2 plato sopero (1 taza) ensalada."
+          ],
+          groups: [
+            { label: "Proteína + Vegetales:", options: [{ name: "150 gr pechuga de pollo (140g cocido) + 1.5 platos vegetales salteados", kcal: 280, p: 47, c: 10, f: 5.2 }] },
+            { label: "Carbohidratos:", options: [{ name: "250 gr arroz/mote cocinado + 240 gr papa cocinada", kcal: 530, p: 11.5, c: 118, f: 1 }] },
+            { label: "Grasas + Ensalada (1 taza):", options: [
+              { name: "2 cdtas aceite de oliva en frío (10 ml) + 50 gr aguacate + ensalada", kcal: 170, p: 1, c: 4, f: 17.5 },
+              { name: "2 cdtas aceite de oliva en frío (10 ml) + 15 gr nueces + ensalada", kcal: 188, p: 2.3, c: 2, f: 19.8 }
+            ]}
+          ]
+        },
+        4: {
+          optLabel: "Opción 4: Salmón o trucha en Airfryer/plancha + 640g papa",
+          subtitle: "180g salmón/trucha + 640g papa/camote (o 400g arroz/yuca) + ensalada",
+          badgeNote: "Rico en Omega-3",
+          bullets: [
+            "<strong>Proteína:</strong> 180g de salmón o trucha en crudo (150g cocinado, 1 pescado grande) en Airfryer o a la plancha.",
+            "<strong>Carbohidrato:</strong> 640g de papa o camote cocinada (ó 400g de arroz o yuca).",
+            "<strong>Ensalada:</strong> 1/2 plato sopero o 1 taza."
+          ],
+          groups: [
+            { label: "Proteína (Pescado):", options: [{ name: "180 gr de salmón o trucha (150 gr cocinado)", kcal: 330, p: 40, c: 0, f: 18 }] },
+            { label: "Carbohidrato + Ensalada (1 taza):", options: [
+              { name: "640 gr de papa o camote cocinada + 1/2 plato ensalada", kcal: 560, p: 12, c: 128, f: 0.8 },
+              { name: "400 gr de arroz o yuca cocinada + 1/2 plato ensalada", kcal: 535, p: 11, c: 116, f: 1.2 }
+            ]}
+          ]
+        },
+        5: {
+          optLabel: "Opción 5: Pollo salteado con champiñones + 400g fideos/arroz",
+          subtitle: "150g pechuga (o 175g presas) con champiñones + 400g fideo o arroz",
+          badgeNote: "Opción con Pasta / Fideos",
+          bullets: [
+            "<strong>Proteína:</strong> 150g pechuga de pollo (120g cocido) + 2 cdtas aceite de oliva (10 ml) (ó 175g presas muslo/pierna salteadas con especias) + 1/2 taza champiñones picados.",
+            "<strong>Carbohidrato:</strong> 400g de fideo ó arroz cocinado.",
+            "<strong>Grasa + Ensalada:</strong> 50g de aguacate (ó 15g nueces) + 1/2 plato sopero (1 taza) ensalada."
+          ],
+          groups: [
+            { label: "Proteína:", options: [
+              { name: "150 gr pechuga de pollo (120g cocido) + 2 cdtas aceite oliva + champiñones", kcal: 335, p: 46, c: 2, f: 15 },
+              { name: "175 gr presas de pollo (muslo/pierna, 150g cocido) + 1/2 taza champiñones", kcal: 305, p: 43, c: 2, f: 13 }
+            ]},
+            { label: "Carbohidrato:", options: [
+              { name: "400 gr de fideo cocinado", kcal: 560, p: 18, c: 115, f: 2.5 },
+              { name: "400 gr de arroz cocinado", kcal: 520, p: 10.8, c: 112, f: 1.2 }
+            ]},
+            { label: "Grasa + Ensalada (1 taza):", options: [
+              { name: "50 gr de aguacate + 1/2 plato sopero de ensalada", kcal: 95, p: 1.5, c: 6, f: 7.5 },
+              { name: "15 gr de nueces + 1/2 plato sopero de ensalada", kcal: 113, p: 2.8, c: 4, f: 9.8 }
+            ]}
+          ]
+        },
+        6: {
+          optLabel: "Opción 6: Corvina o tilapia a la plancha + arroz y aguacate",
+          subtitle: "180g corvina/tilapia + 400g arroz (o 640g papa) + aceite de oliva y 70g aguacate",
+          badgeNote: "Pescado Blanco Ligero",
+          bullets: [
+            "<strong>Proteína:</strong> 180g de tilapia o corvina en crudo (150g cocinado aprox.).",
+            "<strong>Carbohidrato:</strong> 400g de arroz cocinado (ó 640g de papa/camote cocinada).",
+            "<strong>Grasa + Ensalada:</strong> 2 cdtas aceite de oliva en frío (10 ml) + 70g aguacate (ó 21g nueces) + 1 plato sopero (2 tazas) ensalada."
+          ],
+          groups: [
+            { label: "Proteína:", options: [{ name: "180 gr de tilapia o corvina en crudo (150 gr cocinado aprox)", kcal: 215, p: 44, c: 0, f: 3.5 }] },
+            { label: "Carbohidrato:", options: [
+              { name: "400 gr de arroz cocinado", kcal: 520, p: 10.8, c: 112, f: 1.2 },
+              { name: "640 gr de papa o camote cocinada", kcal: 550, p: 11.5, c: 126, f: 0.7 }
+            ]},
+            { label: "Grasas + Ensalada (2 tazas):", options: [
+              { name: "2 cdtas aceite de oliva (10 ml) + 70 gr aguacate + ensalada", kcal: 215, p: 2.5, c: 10, f: 20.5 },
+              { name: "2 cdtas aceite de oliva (10 ml) + 21 gr nueces + ensalada", kcal: 235, p: 4.2, c: 7, f: 23.7 }
+            ]}
+          ]
+        },
+        7: {
+          optLabel: "Opción 7: Pollo apanado en Airfryer (Máx 1 vez/sem)",
+          subtitle: "130g pechuga apanada en freidora de aire + 360g arroz o 610g papa",
+          badgeNote: "Máximo 1 vez por semana",
+          bullets: [
+            "<strong>Proteína Crocante:</strong> 130g pechuga de pollo en crudo + 20-40g apanadura (harina + especias) + huevo para dar consistencia + 1 cdta aceite de oliva.",
+            "<strong>Carbohidrato:</strong> 360g de arroz cocinado ó 610g de papa cocinada.",
+            "<strong>Ensalada:</strong> 1 plato de ensalada."
+          ],
+          groups: [
+            { label: "Pollo Apanado:", options: [{ name: "130 gr pechuga cruda + 20-40g apanadura (harina/huevo) + 1 cdta aceite oliva", kcal: 375, p: 43, c: 22, f: 11.5 }] },
+            { label: "Carbohidrato + Ensalada:", options: [
+              { name: "360 gr de arroz cocinado + 1 plato de ensalada", kcal: 485, p: 11, c: 105, f: 1.2 },
+              { name: "610 gr de papa cocinada + 1 plato de ensalada", kcal: 530, p: 12, c: 120, f: 0.7 }
+            ]}
+          ]
+        }
+      },
+
+      // COMIDA 4
+      {
+        1: meal4Standard(1),
+        2: {
+          optLabel: "Opción 2: Galletas de arroz con mermelada o dátiles",
+          subtitle: "Máximo 2 veces por semana antes de entrenamientos súper intensos",
+          badgeNote: "Entreno Súper Intenso",
+          bullets: [
+            "<strong>Base:</strong> 6 unidades de galletas de arroz 'Dr. Muller'.",
+            "<strong>Topping rápido:</strong> 20g de mermelada de cualquier sabor con azúcar ó 40g de dátiles."
+          ],
+          groups: [
+            { label: "Pre-Entreno Rápido:", options: [
+              { name: "6 unidades de galletas de arroz + 20 gr mermelada con azúcar", kcal: 225, p: 3.6, c: 50, f: 1.2 },
+              { name: "6 unidades de galletas de arroz + 40 gr de dátiles", kcal: 282, p: 4.5, c: 66, f: 1.3 }
+            ]}
+          ]
+        },
+        3: meal4Standard(3),
+        4: meal4Standard(4),
+        5: meal4Standard(5),
+        6: meal4Standard(6),
+        7: meal4Standard(7)
+      },
+
+      // COMIDA 5
+      {
+        1: {
+          optLabel: "Opción 1: Seco de pollo (150g pechuga) + 350g arroz + fruta/yogurt",
+          subtitle: "Mismo almuerzo diferentes porciones: 150g pechuga + 350g arroz + 70g aguacate",
+          badgeNote: "Merienda Completa",
+          bullets: [
+            "<strong>Proteína:</strong> 150g pechuga de pollo en crudo (140g cocido aprox.) + tomate y cebolla para el seco.",
+            "<strong>Carbohidrato + Grasa:</strong> 350g de arroz cocinado + 70g de aguacate (ó 21g de nueces).",
+            "<strong>Fruta + Yogurt:</strong> 100g papaya/mango (ó 90g uvas/kiwi/manzana) + 50g yogurt griego casero + 1 ½ plato de ensalada."
+          ],
+          groups: [
+            { label: "Proteína:", options: [{ name: "150 gr pechuga de pollo en crudo (140 gr cocido aprox) + tomate y cebolla", kcal: 245, p: 45, c: 3, f: 5 }] },
+            { label: "Carbohidrato:", options: [{ name: "350 gr de arroz cocinado", kcal: 455, p: 9.5, c: 98, f: 1 }] },
+            { label: "Grasa + Ensalada (1.5 platos):", options: [
+              { name: "70 gr de aguacate + 1.5 platos de ensalada", kcal: 142, p: 2.5, c: 10, f: 10.5 },
+              { name: "21 gr de nueces + 1.5 platos de ensalada", kcal: 162, p: 4.2, c: 7, f: 13.7 }
+            ]},
+            { label: "Fruta + Yogurt:", options: [
+              { name: "100 gr de papaya o mango + 50 gr yogurt griego casero", kcal: 95, p: 5.5, c: 15, f: 1.2 },
+              { name: "90 gr de uvas/kiwi/manzana + 50 gr yogurt griego casero", kcal: 102, p: 5.5, c: 17, f: 1.2 }
+            ]}
+          ]
+        },
+        2: {
+          optLabel: "Opción 2: Pechuga a la plancha + 350g arroz + fruta/yogurt",
+          subtitle: "150g pechuga a la plancha + 350g arroz + 70g aguacate + fruta con yogurt",
+          badgeNote: "Clásico Limpio",
+          bullets: [
+            "<strong>Proteína:</strong> 150g pechuga de pollo en crudo (130g cocido aprox.) a la plancha.",
+            "<strong>Carbohidrato + Grasa:</strong> 350g de arroz cocinado + 70g de aguacate (ó 21g de nueces).",
+            "<strong>Fruta + Yogurt:</strong> 100g papaya/mango (ó 90g uvas/kiwi/manzana) + 50g yogurt griego casero + 1 ½ plato ensalada."
+          ],
+          groups: [
+            { label: "Proteína:", options: [{ name: "150 gr pechuga de pollo en crudo (130 gr cocido aprox)", kcal: 240, p: 45, c: 0, f: 5 }] },
+            { label: "Carbohidrato:", options: [{ name: "350 gr de arroz cocinado", kcal: 455, p: 9.5, c: 98, f: 1 }] },
+            { label: "Grasa + Ensalada (1.5 platos):", options: [
+              { name: "70 gr de aguacate + 1.5 platos de ensalada", kcal: 142, p: 2.5, c: 10, f: 10.5 },
+              { name: "21 gr de nueces + 1.5 platos de ensalada", kcal: 162, p: 4.2, c: 7, f: 13.7 }
+            ]},
+            { label: "Fruta + Yogurt:", options: [
+              { name: "100 gr papaya o mango + 50 gr yogurt griego casero", kcal: 95, p: 5.5, c: 15, f: 1.2 },
+              { name: "90 gr uvas/kiwi/manzana + 50 gr yogurt griego casero", kcal: 102, p: 5.5, c: 17, f: 1.2 }
+            ]}
+          ]
+        },
+        3: {
+          optLabel: "Opción 3: Pollo salteado con ajo + 250g arroz + 160g papa",
+          subtitle: "150g pechuga + 250g arroz/mote + 160g papa + aguacate + mantequilla de maní",
+          badgeNote: "Con Mantequilla de Maní",
+          bullets: [
+            "<strong>Proteína:</strong> 150g pechuga de pollo en crudo (140g cocido aprox.) salteado con ajo.",
+            "<strong>Carbohidratos:</strong> 250g de arroz/mote cocinado + 160g de papa cocinada.",
+            "<strong>Grasas:</strong> 50g aguacate (ó 15g nueces) + 10g mantequilla de maní (ó 1 cdta aceite de oliva en frío).",
+            "<strong>Postre + Ensalada:</strong> 100g papaya/mango (ó 90g uvas/kiwi/manzana) + 50g yogurt griego + 1/2 plato ensalada."
+          ],
+          groups: [
+            { label: "Proteína:", options: [{ name: "150 gr pechuga de pollo en crudo (140 gr cocido aprox) salteado con ajo", kcal: 240, p: 45, c: 0, f: 5 }] },
+            { label: "Carbohidratos:", options: [{ name: "250 gr de arroz/mote cocinado + 160 gr de papa cocinada", kcal: 462, p: 10, c: 102, f: 0.9 }] },
+            { label: "Grasas combinadas:", options: [
+              { name: "50 gr de aguacate + 10 gr de mantequilla de maní", kcal: 145, p: 3.5, c: 6, f: 12.5 },
+              { name: "50 gr de aguacate + 1 cdta de aceite de oliva en frío", kcal: 125, p: 1, c: 4, f: 12.5 },
+              { name: "15 gr de nueces + 10 gr de mantequilla de maní", kcal: 158, p: 4.8, c: 4, f: 14.8 }
+            ]},
+            { label: "Fruta + Yogurt + Ensalada:", options: [
+              { name: "100 gr papaya/mango (o 90g uvas/kiwi) + 50 gr yogurt griego + 1/2 plato ensalada", kcal: 110, p: 6, c: 18, f: 1.2 }
+            ]}
+          ]
+        },
+        4: {
+          optLabel: "Opción 4: Pollo con hortalizas + 480g papas en Airfryer + avena",
+          subtitle: "150g pechuga + 480g papa en freidora de aire + guacamole + fruta, yogurt y 20g avena",
+          badgeNote: "Papas Crocantes Airfryer",
+          bullets: [
+            "<strong>Proteína:</strong> 150g pechuga de pollo en crudo (120g cocinado aprox.) + 1/2 taza pimientos o champiñones.",
+            "<strong>Carbohidrato + Guacamole:</strong> 480g papa cocinada (pesar antes de Airfryer) + 1/2 cdta aceite oliva + Guacamole (30g aguacate, tomate, cebolla y limón).",
+            "<strong>Bowl Nocturno:</strong> 100g papaya/mango (ó 90g uvas/kiwi) + 50g yogurt griego + 20g avena Quaker."
+          ],
+          groups: [
+            { label: "Proteína:", options: [{ name: "150 gr pechuga de pollo (120g cocido) + 1/2 taza pimientos o champiñones", kcal: 250, p: 46, c: 3, f: 5 }] },
+            { label: "Papas Airfryer + Guacamole:", options: [{ name: "480 gr papa cocinada + 1/2 cdta aceite de oliva + Guacamole (30g aguacate)", kcal: 485, p: 10, c: 99, f: 7 }] },
+            { label: "Fruta + Yogurt + Avena:", options: [{ name: "100 gr papaya/mango (o 90g uvas) + 50 gr yogurt griego + 20 gr avena Quaker", kcal: 170, p: 8.2, c: 28.5, f: 2.6 }] }
+          ]
+        },
+        5: {
+          optLabel: "Opción 5: Pechuga al perejil y champiñones + 350g fideos/arroz",
+          subtitle: "150g pechuga con champiñones + 350g fideo o arroz + aguacate y aceite de oliva",
+          badgeNote: "Merienda con Pasta",
+          bullets: [
+            "<strong>Proteína:</strong> 150g pechuga de pollo en crudo (130g cocido aprox.) + perejil y champiñones al gusto.",
+            "<strong>Carbohidrato + Grasa:</strong> 350g de fideo o arroz cocinado + 50g aguacate (ó 15g nueces) + 1 cdta aceite de oliva en frío.",
+            "<strong>Postre + Ensalada:</strong> 100g papaya/mango + 50g yogurt griego + 1 ½ plato de ensalada."
+          ],
+          groups: [
+            { label: "Proteína:", options: [{ name: "150 gr pechuga de pollo (130g cocido aprox) + perejil y champiñones", kcal: 245, p: 46, c: 2, f: 5 }] },
+            { label: "Carbohidrato:", options: [
+              { name: "350 gr de fideo cocinado", kcal: 490, p: 16, c: 100, f: 2.2 },
+              { name: "350 gr de arroz cocinado", kcal: 455, p: 9.5, c: 98, f: 1 }
+            ]},
+            { label: "Grasa:", options: [
+              { name: "50 gr de aguacate + 1 cdta de aceite de oliva en frío", kcal: 125, p: 1, c: 4, f: 12 },
+              { name: "15 gr de nueces + 1 cdta de aceite de oliva en frío", kcal: 143, p: 2.3, c: 2, f: 14.3 }
+            ]},
+            { label: "Fruta + Yogurt + Ensalada:", options: [{ name: "100 gr papaya/mango + 50 gr yogurt griego + 1.5 platos ensalada", kcal: 115, p: 6.5, c: 19, f: 1.4 }] }
+          ]
+        },
+        6: {
+          optLabel: "Opción 6: Bowl de pollo y huevo con arroz/papa y plátano maduro",
+          subtitle: "120g pechuga + 1 huevo + 350g arroz/quinoa (o 560g papa) + 60g maduro + salsa yogurt",
+          badgeNote: "Power Bowl Completo",
+          bullets: [
+            "<strong>Proteína Mixta:</strong> 120g pechuga de pollo en crudo (100g cocido) + 1 huevo entero picado + tomate, pimientos y zuquini en cubos.",
+            "<strong>Carbohidrato:</strong> 350g arroz/fideo/quinoa cocinado (ó 560g papa) + 60g plátano maduro cocinado.",
+            "<strong>Grasa y Salsa:</strong> 50g aguacate (ó 10g nueces) + Salsa (50g yogurt griego, mostaza, sal y ajo) + 1/2 plato ensalada."
+          ],
+          groups: [
+            { label: "Proteína Mixta:", options: [{ name: "120 gr pechuga de pollo (100g cocido) + 1 huevo entero picado + zuquini/pimientos", kcal: 275, p: 42, c: 4, f: 9.5 }] },
+            { label: "Carbohidrato:", options: [
+              { name: "350 gr arroz/fideo/quinoa cocinado + 60 gr plátano maduro cocinado", kcal: 525, p: 10.5, c: 115, f: 1.4 },
+              { name: "560 gr de papa cocinada + 60 gr plátano maduro cocinado", kcal: 545, p: 11, c: 125, f: 0.8 }
+            ]},
+            { label: "Grasa + Salsa Yogurt:", options: [
+              { name: "50 gr aguacate + Salsa (50g yogurt griego + mostaza, sal y ajo) + 1/2 ensalada", kcal: 130, p: 6, c: 7, f: 8.7 },
+              { name: "10 gr nueces + Salsa (50g yogurt griego + mostaza, sal y ajo) + 1/2 ensalada", kcal: 115, p: 6.5, c: 4, f: 7.7 }
+            ]}
+          ]
+        },
+        7: {
+          optLabel: "Opción 7: Tacos o sánduches de pollo + fruta con 80g avena",
+          subtitle: "Tacos de pollo y huevo con guacamole + bowl de 200g fruta, yogurt y 80g avena",
+          badgeNote: "Tacos + Bowl Nocturno",
+          bullets: [
+            "<strong>Tacos / Sánduche:</strong> 120g pechuga o muslo en crudo (90g cocido) + 1 huevo entero + 2 tortillas medianas (maíz Dellmex, trigo o 2 rodajas pan).",
+            "<strong>Salsa y Aguacate:</strong> 1 cda yogurt griego con mostaza, sal y ajo + 50g aguacate + 1/2 plato ensalada.",
+            "<strong>Super Bowl Dulce:</strong> 200g papaya/mango (ó 180g uvas/kiwi/manzana) + 50g yogurt griego casero + 80g de avena."
+          ],
+          groups: [
+            { label: "Relleno Proteico:", options: [{ name: "120 gr pechuga o muslo de pollo (90g cocido) + 1 huevo entero + tomate y lechuga", kcal: 270, p: 41, c: 2, f: 10 }] },
+            { label: "Tortillas / Pan + Salsa:", options: [
+              { name: "2 tortillas de maíz medianas 'Dellmex' + 1 cda yogurt griego + 50 gr aguacate", kcal: 235, p: 6, c: 32, f: 9.2 },
+              { name: "2 tortillas de trigo 'Mama Fanny/Bimbo' ó 2 rodajas pan + yogurt + 50g aguacate", kcal: 255, p: 7, c: 36, f: 9.8 }
+            ]},
+            { label: "Bowl Carbohidrato:", options: [{ name: "200 gr papaya/mango (o 180g uvas) + 50 gr yogurt griego casero + 80 gr avena", kcal: 440, p: 17, c: 80, f: 6.8 }] }
+          ]
+        }
+      }
+    ];
+
+    const shoppingIngredientsMap = {
+      0: {
+        1: [{ id: 'arroz_cocido', qty: 100 }, { id: 'salsa_hunts', qty: 10 }, { id: 'huevos', qty: 4 }, { id: 'fruta_picada', qty: 220 }, { id: 'yogurt_griego', qty: 50 }, { id: 'avena', qty: 20 }],
+        2: [{ id: 'huevos', qty: 5 }, { id: 'pan_masamadre', qty: 60 }, { id: 'yogurt_griego', qty: 50 }, { id: 'manzana_verde', qty: 90 }, { id: 'fruta_picada', qty: 100 }, { id: 'vegetales_jugo', qty: 1 }, { id: 'avena', qty: 40 }],
+        3: [{ id: 'mote_cocido', qty: 110 }, { id: 'huevos', qty: 6 }, { id: 'manzana_verde', qty: 90 }, { id: 'fruta_picada', qty: 100 }, { id: 'vegetales_jugo', qty: 1 }, { id: 'avena', qty: 40 }],
+        4: [{ id: 'platano_verde', qty: 200 }, { id: 'huevos', qty: 4 }, { id: 'queso_holandesa', qty: 30 }, { id: 'fruta_picada', qty: 200 }],
+        5: [{ id: 'platano_verde', qty: 150 }, { id: 'platano_maduro', qty: 100 }, { id: 'huevos', qty: 4 }, { id: 'queso_holandesa', qty: 30 }, { id: 'fruta_picada', qty: 100 }],
+        6: [{ id: 'huevos', qty: 4 }, { id: 'avena', qty: 80 }, { id: 'guineo_orito', qty: 120 }, { id: 'yogurt_griego', qty: 50 }],
+        7: [{ id: 'huevos', qty: 4 }, { id: 'pan_masamadre', qty: 30 }, { id: 'leche_tru', qty: 200 }, { id: 'avena', qty: 60 }, { id: 'fruta_picada', qty: 220 }]
+      },
+      1: {
+        1: [{ id: 'fruta_snack', qty: 190 }, { id: 'frutos_secos', qty: 16 }, { id: 'tortas_drmuller', qty: 3 }],
+        2: [{ id: 'guineo_orito', qty: 120 }, { id: 'avena', qty: 20 }, { id: 'frutos_secos', qty: 15 }],
+        3: [{ id: 'fruta_snack', qty: 190 }, { id: 'frutos_secos', qty: 16 }, { id: 'tortas_drmuller', qty: 3 }],
+        4: [{ id: 'fruta_snack', qty: 190 }, { id: 'frutos_secos', qty: 16 }, { id: 'tortas_drmuller', qty: 3 }],
+        5: [{ id: 'fruta_snack', qty: 190 }, { id: 'frutos_secos', qty: 16 }, { id: 'tortas_drmuller', qty: 3 }],
+        6: [{ id: 'fruta_snack', qty: 190 }, { id: 'frutos_secos', qty: 16 }, { id: 'tortas_drmuller', qty: 3 }],
+        7: [{ id: 'fruta_snack', qty: 190 }, { id: 'frutos_secos', qty: 16 }, { id: 'tortas_drmuller', qty: 3 }]
+      },
+      2: {
+        1: [{ id: 'pollo_presas', qty: 175 }, { id: 'arroz_cocido', qty: 400 }, { id: 'aguacate', qty: 50 }, { id: 'ensalada_porcion', qty: 2 }],
+        2: [{ id: 'lomo_res', qty: 170 }, { id: 'arroz_cocido', qty: 340 }, { id: 'menestra', qty: 60 }, { id: 'aguacate', qty: 50 }, { id: 'ensalada_porcion', qty: 2 }],
+        3: [{ id: 'pechuga_pollo', qty: 150 }, { id: 'vegetales_saltear', qty: 1.5 }, { id: 'arroz_cocido', qty: 250 }, { id: 'papa_cocida', qty: 240 }, { id: 'aceite_oliva', qty: 10 }, { id: 'aguacate', qty: 50 }, { id: 'ensalada_porcion', qty: 1 }],
+        4: [{ id: 'salmon_trucha', qty: 180 }, { id: 'papa_cocida', qty: 640 }, { id: 'ensalada_porcion', qty: 1 }],
+        5: [{ id: 'pechuga_pollo', qty: 150 }, { id: 'champinones', qty: 80 }, { id: 'fideo_cocido', qty: 400 }, { id: 'aceite_oliva', qty: 10 }, { id: 'aguacate', qty: 50 }, { id: 'ensalada_porcion', qty: 1 }],
+        6: [{ id: 'corvina_tilapia', qty: 180 }, { id: 'arroz_cocido', qty: 400 }, { id: 'aceite_oliva', qty: 10 }, { id: 'aguacate', qty: 70 }, { id: 'ensalada_porcion', qty: 2 }],
+        7: [{ id: 'pechuga_pollo', qty: 130 }, { id: 'arroz_cocido', qty: 360 }, { id: 'aceite_oliva', qty: 5 }, { id: 'ensalada_porcion', qty: 2 }]
+      },
+      3: {
+        1: [{ id: 'avena', qty: 60 }, { id: 'guineo_orito', qty: 120 }],
+        2: [{ id: 'tortas_drmuller', qty: 6 }, { id: 'mermelada_datiles', qty: 30 }],
+        3: [{ id: 'avena', qty: 60 }, { id: 'guineo_orito', qty: 120 }],
+        4: [{ id: 'avena', qty: 60 }, { id: 'guineo_orito', qty: 120 }],
+        5: [{ id: 'avena', qty: 60 }, { id: 'guineo_orito', qty: 120 }],
+        6: [{ id: 'avena', qty: 60 }, { id: 'guineo_orito', qty: 120 }],
+        7: [{ id: 'avena', qty: 60 }, { id: 'guineo_orito', qty: 120 }]
+      },
+      4: {
+        1: [{ id: 'pechuga_pollo', qty: 150 }, { id: 'arroz_cocido', qty: 350 }, { id: 'aguacate', qty: 70 }, { id: 'fruta_picada', qty: 100 }, { id: 'yogurt_griego', qty: 50 }, { id: 'ensalada_porcion', qty: 1.5 }],
+        2: [{ id: 'pechuga_pollo', qty: 150 }, { id: 'arroz_cocido', qty: 350 }, { id: 'aguacate', qty: 70 }, { id: 'fruta_picada', qty: 100 }, { id: 'yogurt_griego', qty: 50 }, { id: 'ensalada_porcion', qty: 1.5 }],
+        3: [{ id: 'pechuga_pollo', qty: 150 }, { id: 'arroz_cocido', qty: 250 }, { id: 'papa_cocida', qty: 160 }, { id: 'aguacate', qty: 50 }, { id: 'mantequilla_mani', qty: 10 }, { id: 'fruta_picada', qty: 100 }, { id: 'yogurt_griego', qty: 50 }, { id: 'ensalada_porcion', qty: 0.5 }],
+        4: [{ id: 'pechuga_pollo', qty: 150 }, { id: 'papa_cocida', qty: 480 }, { id: 'aguacate', qty: 30 }, { id: 'fruta_picada', qty: 100 }, { id: 'yogurt_griego', qty: 50 }, { id: 'avena', qty: 20 }],
+        5: [{ id: 'pechuga_pollo', qty: 150 }, { id: 'champinones', qty: 60 }, { id: 'fideo_cocido', qty: 350 }, { id: 'aguacate', qty: 50 }, { id: 'aceite_oliva', qty: 5 }, { id: 'fruta_picada', qty: 100 }, { id: 'yogurt_griego', qty: 50 }, { id: 'ensalada_porcion', qty: 1.5 }],
+        6: [{ id: 'pechuga_pollo', qty: 120 }, { id: 'huevos', qty: 1 }, { id: 'arroz_cocido', qty: 350 }, { id: 'platano_maduro', qty: 60 }, { id: 'aguacate', qty: 50 }, { id: 'yogurt_griego', qty: 50 }, { id: 'ensalada_porcion', qty: 0.5 }],
+        7: [{ id: 'pechuga_pollo', qty: 120 }, { id: 'huevos', qty: 1 }, { id: 'tortillas_dellmex', qty: 2 }, { id: 'aguacate', qty: 50 }, { id: 'yogurt_griego', qty: 65 }, { id: 'fruta_picada', qty: 200 }, { id: 'avena', qty: 80 }, { id: 'ensalada_porcion', qty: 0.5 }]
+      }
+    };
+
+    const ingredientCatalog = {
+      pechuga_pollo: { cat: "🥩 Proteínas y Carnes", name: "Pechuga de pollo (peso en crudo)", unit: "gr", brand: "Fresco / bandeja sin piel", rawFactor: null },
+      pollo_presas: { cat: "🥩 Proteínas y Carnes", name: "Presas de pollo muslo/pierna (peso en crudo)", unit: "gr", brand: "Para seco de pollo", rawFactor: null },
+      lomo_res: { cat: "🥩 Proteínas y Carnes", name: "Lomo de res sin grasa visible (crudo)", unit: "gr", brand: "Corte magro", rawFactor: null },
+      salmon_trucha: { cat: "🥩 Proteínas y Carnes", name: "Salmón o Trucha fresca (crudo)", unit: "gr", brand: "Filete para Airfryer/plancha", rawFactor: null },
+      corvina_tilapia: { cat: "🥩 Proteínas y Carnes", name: "Corvina o Tilapia (crudo)", unit: "gr", brand: "Filete fresco", rawFactor: null },
+      huevos: { cat: "🥩 Proteínas y Carnes", name: "Huevos (enteros + claras usadas)", unit: "unid.", brand: "Cubeta de huevos grandes", rawFactor: null },
+      yogurt_griego: { cat: "🥛 Lácteos y Quesos", name: "Yogurt Griego Descremado / Casero", unit: "gr", brand: "Marcas: Casero, Zeus, Karuu, El Tokte", rawFactor: null },
+      queso_holandesa: { cat: "🥛 Lácteos y Quesos", name: "Queso Mozarella semidescremado o Fresco", unit: "gr", brand: "Marcas: La Holandesa, Supermaxi, Kiosco", rawFactor: null },
+      leche_tru: { cat: "🥛 Lácteos y Quesos", name: "Leche deslactosada ó Leche 'TRÜ Protein'", unit: "ml", brand: "Marcas: TRÜ +Proteína / LIV vegetal s/azúcar", rawFactor: null },
+      arroz_cocido: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Arroz (Total servido cocinado)", unit: "gr cocido", brand: "Compra aprox. en crudo", rawFactor: 0.36, rawUnit: "gr en crudo" },
+      papa_cocida: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Papa o Camote", unit: "gr", brand: "Pesar antes de meter a la Airfryer", rawFactor: null },
+      fideo_cocido: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Fideo (Total servido cocinado)", unit: "gr cocido", brand: "Compra en paquete seco aprox.", rawFactor: 0.4, rawUnit: "gr paquete seco" },
+      mote_cocido: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Mote cocinado sin cáscara / choclo", unit: "gr cocido", brand: "Para Mote Pillo", rawFactor: null },
+      platano_verde: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Plátano verde (o Tortilla de verde)", unit: "gr", brand: "Natural o marca 'Soul Foods'", rawFactor: null },
+      platano_maduro: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Plátano maduro", unit: "gr", brand: "Para tigrillo pintón / acompañar almuerzo", rawFactor: null },
+      menestra: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Poroto o Lenteja (para menestra)", unit: "gr cocido", brand: "Grano seco o cocido en casa", rawFactor: null },
+      avena: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Avena en hojuelas / para colada", unit: "gr", brand: "Marcas: Quaker ó Schullo hojuelas enteras", rawFactor: null },
+      tortas_drmuller: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Tortas de arroz ó Galletas saborizadas", unit: "unid.", brand: "Marca: Dr. Muller (natural / mango / manzana-canela)", rawFactor: null },
+      pan_masamadre: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Pan de Masa Madre ó Pan Integral", unit: "gr", brand: "Masa madre Supermaxi / Supan, Moderna, Bimbo integral", rawFactor: null },
+      tortillas_dellmex: { cat: "🌾 Carbohidratos, Panes y Cereales", name: "Tortillas de maíz o trigo medianas", unit: "unid.", brand: "Marcas: Dellmex (maíz) / Mama Fanny, Bimbo, Mayas", rawFactor: null },
+      fruta_picada: { cat: "🍎 Frutas", name: "Papaya, Piña o Mango (desayunos y cenas)", unit: "gr", brand: "También intercambiable por uvas/kiwi/fresas", rawFactor: null },
+      fruta_snack: { cat: "🍎 Frutas", name: "Fruta de Media Mañana (Manzana, Mango, Fresas, Melón)", unit: "gr", brand: "180g manzana/mandarina, 190g mango o 300g fresas", rawFactor: null },
+      guineo_orito: { cat: "🍎 Frutas", name: "Guineo u Orito (Pre-entreno y toppings)", unit: "gr", brand: "Recomendación del plan: Orito", rawFactor: null },
+      manzana_verde: { cat: "🍎 Frutas", name: "Manzana verde (para Jugo Verde)", unit: "gr", brand: "1 unidad mediana = 90 gr aprox.", rawFactor: null },
+      aguacate: { cat: "🥑 Grasas Saludables y Despensa", name: "Aguacate (pulpa neta)", unit: "gr", brand: "Equivalente: 15g nueces por cada 50g aguacate", rawFactor: null },
+      frutos_secos: { cat: "🥑 Grasas Saludables y Despensa", name: "Nueces, Almendras o Pistachos sin cáscara", unit: "gr", brand: "Naturales sin sal añadida", rawFactor: null },
+      aceite_oliva: { cat: "🥑 Grasas Saludables y Despensa", name: "Aceite de Oliva Extra Virgen (frasco vidrio)", unit: "ml", brand: "Marca recomendada: La Española", rawFactor: null },
+      mantequilla_mani: { cat: "🥑 Grasas Saludables y Despensa", name: "Mantequilla de maní o almendras", unit: "gr", brand: "Marcas: Life Choice, LIV, Karay", rawFactor: null },
+      salsa_hunts: { cat: "🥑 Grasas Saludables y Despensa", name: "Salsa de tomate 100% natural", unit: "gr", brand: "Marca recomendada: Hunts", rawFactor: null },
+      mermelada_datiles: { cat: "🥑 Grasas Saludables y Despensa", name: "Mermelada o Dátiles (pre-entreno intenso)", unit: "gr", brand: "Opcional máx. 2 veces/semana", rawFactor: null },
+      ensalada_porcion: { cat: "🥬 Verduras, Ensaladas e Hidratación", name: "Ensaladas (Hojas base + Vegetal de pulpa)", unit: "tazas", brand: "Hojas: lechuga, espinaca, rúcula + Pulpa: tomate, pepino, brócoli, zuquini", rawFactor: null },
+      vegetales_jugo: { cat: "🥬 Verduras, Ensaladas e Hidratación", name: "Kit Jugo Verde (Espinaca, pepinillo, apio, limón)", unit: "porc.", brand: "2 puñados espinaca + 1/2 pepinillo + 1 apio + 1/2 limón", rawFactor: null },
+      vegetales_saltear: { cat: "🥬 Verduras, Ensaladas e Hidratación", name: "Vegetales para saltear (Pimientos, zanahoria, brócoli)", unit: "platos", brand: "Más cebolla blanca/verde, tomate, ajo y perejil", rawFactor: null },
+      champinones: { cat: "🥬 Verduras, Ensaladas e Hidratación", name: "Champiñones frescos", unit: "gr", brand: "En bandeja para saltear", rawFactor: null }
+    };
+
+    let state = {
+      mealOptions: [1, 1, 1, 1, 3],
+      mealChecked: [true, true, true, true, true],
+      groupSelections: [{}, {}, {}, {}, {}],
+      waterCount: 0,
+      suerox: false,
+      menuFilter: 'all',
+      weekPlan: [
+        [1, 1, 1, 1, 3],
+        [2, 2, 2, 2, 2],
+        [3, 3, 3, 3, 3],
+        [4, 4, 4, 4, 4],
+        [5, 5, 5, 5, 5],
+        [6, 6, 6, 6, 6],
+        [7, 7, 7, 7, 7]
+      ],
+      checkedShopItems: {},
+      progressEntries: {
+        0: { date: new Date().toISOString().slice(0, 10), weight: "", waist: "", arm: "", sleep: "7.5", notes: "Inicio Etapa 1.2" },
+        1: { date: "", weight: "", waist: "", arm: "", sleep: "", notes: "" },
+        2: { date: "", weight: "", waist: "", arm: "", sleep: "", notes: "" },
+        3: { date: "", weight: "", waist: "", arm: "", sleep: "", notes: "" },
+        4: { date: "", weight: "", waist: "", arm: "", sleep: "", notes: "" }
+      }
+    };
+
+    let computedMealsSummary = [];
+
+    function initApp() {
+      const saved = localStorage.getItem('mentum_suite_v5');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          state = { ...state, ...parsed };
+        } catch (e) {}
+      }
+      refreshAllViews();
+    }
+
+    function refreshAllViews() {
+      document.getElementById('sueroxCheck').checked = !!state.suerox;
+      renderWater();
+      renderMeals();
+      calculateTotals();
+      syncMasterSelector();
+      renderInteractiveMenu();
+      renderWeekPlanner();
+      renderShoppingList();
+      loadWeekToForm(0);
+      renderProgressView();
+      renderHealthSyncView();
+    }
+
+    function saveState() {
+      state.suerox = document.getElementById('sueroxCheck').checked;
+      localStorage.setItem('mentum_suite_v5', JSON.stringify(state));
+      const ind = document.getElementById('saveIndicator');
+      if (ind) {
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        ind.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 inline-block"></span> Guardado (${now})`;
+      }
+    }
+
+    // ==================== FUNCIONES DE RESPALDO Y RESTAURACIÓN ====================
+    function showBackupToast(msg) {
+      const t = document.getElementById('backupToast');
+      t.innerText = msg;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 3500);
+    }
+
+    function exportBackupJSON() {
+      saveState();
+      const today = new Date().toISOString().slice(0, 10);
+      const dataStr = JSON.stringify(state, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `respaldo_mentum_francisco_${today}.json`;
+      a.click();
+      showBackupToast("✅ Archivo de respaldo (.json) descargado correctamente.");
+    }
+
+    function importBackupJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const imported = JSON.parse(e.target.result);
+          state = { ...state, ...imported };
+          saveState();
+          refreshAllViews();
+          showBackupToast("✅ ¡Respaldo restaurado con éxito! Todos tus registros están al día.");
+        } catch (err) {
+          alert("El archivo seleccionado no es un respaldo válido.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function toggleQuickSyncModal() {
+      const modal = document.getElementById('quickSyncModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+        document.getElementById('quickSyncInput').value = encoded;
+      }
+    }
+
+    function copyQuickSyncCode() {
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(state))));
+      const input = document.getElementById('quickSyncInput');
+      input.value = encoded;
+      navigator.clipboard.writeText(encoded).then(() => {
+        showBackupToast("✅ Código rápido copiado. Envíalo por WhatsApp para pegarlo en tu otro dispositivo.");
+      });
+    }
+
+    function restoreQuickSyncCode() {
+      const val = document.getElementById('quickSyncInput').value.trim();
+      if (!val) return;
+      try {
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(val))));
+        state = { ...state, ...decoded };
+        saveState();
+        refreshAllViews();
+        document.getElementById('quickSyncModal').classList.add('hidden');
+        showBackupToast("✅ ¡Datos sincronizados desde el código rápido!");
+      } catch (e) {
+        alert("El código ingresado no es válido o está incompleto.");
+      }
+    }
+
+    function switchTab(tab) {
+      const views = {
+        menu: document.getElementById('viewMenu'),
+        calc: document.getElementById('viewCalc'),
+        shop: document.getElementById('viewShop'),
+        progress: document.getElementById('viewProgress'),
+        health: document.getElementById('viewHealth')
+      };
+      const btns = {
+        menu: document.getElementById('tabBtnMenu'),
+        calc: document.getElementById('tabBtnCalc'),
+        shop: document.getElementById('tabBtnShop'),
+        progress: document.getElementById('tabBtnProgress'),
+        health: document.getElementById('tabBtnHealth')
+      };
+
+      Object.keys(views).forEach(k => {
+        if (k === tab) {
+          views[k].classList.remove('hidden');
+          btns[k].className = "px-3 py-1.5 rounded-lg text-xs transition tab-active";
+        } else {
+          views[k].classList.add('hidden');
+          btns[k].className = "px-3 py-1.5 rounded-lg text-xs transition tab-inactive";
+        }
+      });
+
+      if (tab === 'menu') renderInteractiveMenu();
+      if (tab === 'shop') { renderWeekPlanner(); renderShoppingList(); }
+      if (tab === 'progress') renderProgressView();
+      if (tab === 'health') renderHealthSyncView();
+    }
+
+    // ==================== MENÚ A LA CARTA ====================
+    function filterMenuMeal(filterVal) {
+      state.menuFilter = filterVal;
+      ['all', 0, 1, 2, 3, 4].forEach(k => {
+        const btn = document.getElementById(`filter-${k}`);
+        if (!btn) return;
+        btn.className = (k === filterVal)
+          ? "text-xs px-3 py-1.5 rounded-lg bg-emerald-500 text-slate-950 font-bold"
+          : "text-xs px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700";
+      });
+      renderInteractiveMenu();
+    }
+
+    function getOptionMacros(mealIdx, optNum) {
+      const data = catalogByMeal[mealIdx][optNum];
+      let k = 0, p = 0, c = 0, f = 0;
+      data.groups.forEach(g => {
+        const item = g.options[0];
+        k += item.kcal; p += item.p; c += item.c; f += item.f;
+      });
+      return { kcal: Math.round(k), p: Math.round(p), c: Math.round(c), f: Math.round(f) };
+    }
+
+    function selectFromMenuCard(mealIdx, optNum) {
+      state.mealOptions[mealIdx] = optNum;
+      state.groupSelections[mealIdx] = {};
+      saveState();
+      renderMeals();
+      calculateTotals();
+      syncMasterSelector();
+      renderInteractiveMenu();
+    }
+
+    function renderInteractiveMenu() {
+      const container = document.getElementById('interactiveMenuContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      for (let mIdx = 0; mIdx < 5; mIdx++) {
+        if (state.menuFilter !== 'all' && state.menuFilter !== mIdx) continue;
+
+        const currentSelectedOpt = state.mealOptions[mIdx];
+        const isSnackMeal = (mIdx === 1 || mIdx === 3);
+        const optionsToRender = isSnackMeal ? [1, 2] : [1, 2, 3, 4, 5, 6, 7];
+
+        let cardsHtml = '';
+        optionsToRender.forEach(optNum => {
+          const item = catalogByMeal[mIdx][optNum];
+          const macros = getOptionMacros(mIdx, optNum);
+          const isSelected = isSnackMeal
+            ? (optNum === 2 ? currentSelectedOpt === 2 : currentSelectedOpt !== 2)
+            : (currentSelectedOpt === optNum);
+
+          const titleLabel = isSnackMeal && optNum === 1
+            ? `Modalidad Estándar (Opciones 1, 3, 4, 5, 6 y 7)`
+            : item.optLabel;
+
+          const bulletsHtml = (item.bullets || []).map(b => `<li class="leading-relaxed">• ${b}</li>`).join('');
+
+          cardsHtml += `
+            <div onclick="selectFromMenuCard(${mIdx}, ${optNum})" class="card p-4 cursor-pointer hover:border-emerald-500/60 transition flex flex-col justify-between ${isSelected ? 'menu-card-selected' : ''}">
+              <div>
+                <div class="flex justify-between items-start gap-2 mb-2">
+                  <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700">${item.badgeNote || `Opción ${optNum}`}</span>
+                  ${isSelected
+                    ? `<span class="text-[11px] font-extrabold text-emerald-400 bg-emerald-500/20 px-2 py-0.5 rounded-full">✓ Elegida hoy</span>`
+                    : `<span class="text-[11px] text-slate-400 hover:text-white">Clic para elegir</span>`
+                  }
+                </div>
+                <h4 class="font-extrabold text-white text-sm mb-2">${titleLabel}</h4>
+                <ul class="text-xs text-slate-300 space-y-1.5 mb-4">${bulletsHtml}</ul>
+              </div>
+
+              <div class="border-t border-slate-800 pt-2.5 flex justify-between items-center text-[11px]">
+                <span class="font-extrabold text-emerald-400 text-xs">${macros.kcal} kcal</span>
+                <span class="text-slate-400">P: <strong class="text-blue-400">${macros.p}g</strong> • C: <strong class="text-amber-400">${macros.c}g</strong> • G: <strong class="text-rose-400">${macros.f}g</strong></span>
+              </div>
+            </div>
+          `;
+        });
+
+        const section = document.createElement('div');
+        section.innerHTML = `
+          <div class="flex flex-wrap justify-between items-center gap-2 mb-3 border-b border-slate-800 pb-2">
+            <div>
+              <h3 class="text-base md:text-lg font-black text-white">${mealNames[mIdx]}</h3>
+              <p class="text-xs text-slate-400">Opción activa hoy: <strong class="text-emerald-400">Opción ${currentSelectedOpt}</strong></p>
+            </div>
+            <button onclick="switchTab('calc')" class="text-xs text-sky-400 hover:underline no-print">Ajustar equivalentes en Calculadora →</button>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 ${isSnackMeal ? 'lg:grid-cols-2' : 'lg:grid-cols-3'} gap-4">
+            ${cardsHtml}
+          </div>
+        `;
+        container.appendChild(section);
+      }
+    }
+
+    // ==================== CALCULADORA DIARIA ====================
+    function applyAllOptions(optVal) {
+      if (optVal === 'custom') return;
+      const num = parseInt(optVal, 10);
+      state.mealOptions = [num, num, num, num, num];
+      state.groupSelections = [{}, {}, {}, {}, {}];
+      saveState();
+      renderMeals();
+      calculateTotals();
+      syncMasterSelector();
+      renderInteractiveMenu();
+    }
+
+    function setExampleMix() {
+      state.mealOptions[2] = 1;
+      state.mealOptions[4] = 3;
+      saveState();
+      renderMeals();
+      calculateTotals();
+      syncMasterSelector();
+      renderInteractiveMenu();
+    }
+
+    function changeMealOption(mealIdx, newOpt) {
+      state.mealOptions[mealIdx] = parseInt(newOpt, 10);
+      state.groupSelections[mealIdx] = {};
+      saveState();
+      renderMeals();
+      calculateTotals();
+      syncMasterSelector();
+      renderInteractiveMenu();
+    }
+
+    function updateSubChoice(mealIdx, groupIdx, optIdx) {
+      state.groupSelections[mealIdx][groupIdx] = parseInt(optIdx, 10);
+      saveState();
+      calculateTotals();
+    }
+
+    function toggleMealCheck(mealIdx, isChecked) {
+      state.mealChecked[mealIdx] = isChecked;
+      saveState();
+      renderMeals();
+      calculateTotals();
+    }
+
+    function checkAllMeals(val) {
+      state.mealChecked = [val, val, val, val, val];
+      saveState();
+      renderMeals();
+      calculateTotals();
+    }
+
+    function syncMasterSelector() {
+      const first = state.mealOptions[0];
+      const allSame = state.mealOptions.every(o => o === first);
+      const sel = document.getElementById('masterSelector');
+      const badge = document.getElementById('modeBadge');
+
+      if (allSame) {
+        sel.value = String(first);
+        badge.innerText = `Día Completo: Opción ${first}`;
+      } else {
+        sel.value = 'custom';
+        badge.innerText = "Mix & Match Activo";
+      }
+
+      const pillsHtml = state.mealOptions.map((opt, idx) => `
+        <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">
+          <strong>C${idx + 1}:</strong> Op.${opt}
+        </span>
+      `).join('');
+
+      document.getElementById('activeMixSummary').innerHTML = pillsHtml;
+      document.getElementById('topBarMixPills').innerHTML = pillsHtml;
+    }
+
+    function renderMeals() {
+      const container = document.getElementById('mealsContainer');
+      container.innerHTML = '';
+
+      for (let mIdx = 0; mIdx < 5; mIdx++) {
+        const selectedOpt = state.mealOptions[mIdx];
+        const mealData = catalogByMeal[mIdx][selectedOpt];
+        const isChecked = state.mealChecked[mIdx];
+
+        let mealOptSelectHtml = '';
+        for (let o = 1; o <= 7; o++) {
+          const optInfo = catalogByMeal[mIdx][o];
+          mealOptSelectHtml += `<option value="${o}" ${o === selectedOpt ? 'selected' : ''}>${optInfo.optLabel}</option>`;
+        }
+
+        let groupsHtml = '';
+        mealData.groups.forEach((grp, gIdx) => {
+          const chosenSubIdx = state.groupSelections[mIdx][gIdx] || 0;
+          if (grp.options.length === 1) {
+            const item = grp.options[0];
+            groupsHtml += `
+              <div class="bg-slate-900/55 p-2.5 rounded-lg border border-slate-800/80 flex justify-between items-center text-xs">
+                <div>
+                  <span class="text-slate-400 font-semibold block text-[11px]">${grp.label}</span>
+                  <span class="text-slate-200">${item.name}</span>
+                </div>
+                <span class="text-emerald-400 font-bold whitespace-nowrap ml-2">${item.kcal} kcal</span>
+              </div>
+            `;
+          } else {
+            const subOpts = grp.options.map((o, oIdx) =>
+              `<option value="${oIdx}" ${oIdx === chosenSubIdx ? 'selected' : ''}>${o.name} (${o.kcal} kcal)</option>`
+            ).join('');
+            groupsHtml += `
+              <div class="bg-slate-900/55 p-2.5 rounded-lg border border-slate-800/80">
+                <label class="text-emerald-400 font-semibold block text-[11px] mb-1">${grp.label}</label>
+                <select onchange="updateSubChoice(${mIdx}, ${gIdx}, this.value)" class="w-full bg-slate-800 border border-slate-700 text-slate-100 text-xs rounded px-2.5 py-1.5 focus:outline-none focus:border-emerald-500">
+                  ${subOpts}
+                </select>
+              </div>
+            `;
+          }
+        });
+
+        const card = document.createElement('div');
+        card.className = `card p-5 transition-all ${isChecked ? 'opacity-100' : 'opacity-55'}`;
+        card.innerHTML = `
+          <div class="flex flex-wrap justify-between items-start gap-3 pb-3 border-b border-slate-800">
+            <div class="flex items-start gap-3">
+              <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleMealCheck(${mIdx}, this.checked)" class="w-5 h-5 mt-1 accent-emerald-500 rounded cursor-pointer">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="font-extrabold text-white text-base">${mealNames[mIdx]}</h3>
+                  <span class="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">Opción ${selectedOpt}</span>
+                </div>
+                <p class="text-xs text-slate-400 mt-0.5">${mealData.subtitle}</p>
+              </div>
+            </div>
+            <div id="mealBadge-${mIdx}" class="text-right"></div>
+          </div>
+
+          <div class="mt-3 bg-slate-900/90 p-2.5 rounded-lg border border-emerald-500/30">
+            <label class="text-[11px] font-bold uppercase tracking-wider text-emerald-400 block mb-1">
+              Elegir Opción para ${mealNames[mIdx].split(':')[1]}:
+            </label>
+            <select onchange="changeMealOption(${mIdx}, this.value)" class="w-full bg-slate-800 border border-slate-600 text-white text-xs font-semibold rounded px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+              ${mealOptSelectHtml}
+            </select>
+          </div>
+
+          <div class="space-y-2 mt-3">${groupsHtml}</div>
+        `;
+        container.appendChild(card);
+      }
+    }
+
+    function calculateTotals() {
+      let totalKcal = 0, totalP = 0, totalC = 0, totalF = 0;
+      let consKcal = 0, consP = 0, consC = 0, consF = 0;
+      computedMealsSummary = [];
+
+      for (let mIdx = 0; mIdx < 5; mIdx++) {
+        const selectedOpt = state.mealOptions[mIdx];
+        const mealData = catalogByMeal[mIdx][selectedOpt];
+        let mKcal = 0, mP = 0, mC = 0, mF = 0;
+
+        mealData.groups.forEach((grp, gIdx) => {
+          const subIdx = state.groupSelections[mIdx][gIdx] || 0;
+          const item = grp.options[subIdx] || grp.options[0];
+          mKcal += item.kcal;
+          mP += item.p;
+          mC += item.c;
+          mF += item.f;
+        });
+
+        computedMealsSummary.push({
+          mealIdx: mIdx,
+          title: mealNames[mIdx],
+          ghType: ghMealTypes[mIdx],
+          opt: selectedOpt,
+          label: mealData.optLabel,
+          checked: state.mealChecked[mIdx],
+          kcal: Math.round(mKcal),
+          p: Math.round(mP),
+          c: Math.round(mC),
+          f: Math.round(mF)
+        });
+
+        totalKcal += mKcal; totalP += mP; totalC += mC; totalF += mF;
+        if (state.mealChecked[mIdx]) {
+          consKcal += mKcal; consP += mP; consC += mC; consF += mF;
+        }
+
+        const badge = document.getElementById(`mealBadge-${mIdx}`);
+        if (badge) {
+          badge.innerHTML = `
+            <span class="text-sm font-extrabold text-emerald-400">${Math.round(mKcal)} kcal</span>
+            <span class="block text-[11px] text-slate-400">P: ${Math.round(mP)}g • C: ${Math.round(mC)}g • G: ${Math.round(mF)}g</span>
+          `;
+        }
+      }
+
+      document.getElementById('calConsumed').innerText = Math.round(consKcal);
+      document.getElementById('calTotal').innerText = Math.round(totalKcal);
+      document.getElementById('protConsumed').innerText = Math.round(consP);
+      document.getElementById('protTotal').innerText = Math.round(totalP);
+      document.getElementById('carbConsumed').innerText = Math.round(consC);
+      document.getElementById('carbTotal').innerText = Math.round(totalC);
+      document.getElementById('fatConsumed').innerText = Math.round(consF);
+      document.getElementById('fatTotal').innerText = Math.round(totalF);
+
+      document.getElementById('topBarKcal').innerText = Math.round(totalKcal);
+      document.getElementById('topBarP').innerText = Math.round(totalP);
+      document.getElementById('topBarC').innerText = Math.round(totalC);
+      document.getElementById('topBarF').innerText = Math.round(totalF);
+
+      const remaining = Math.round(totalKcal - consKcal);
+      document.getElementById('calDiff').innerText = remaining > 0
+        ? `Faltan ${remaining} kcal por completar hoy`
+        : `¡100% de las comidas planificadas completadas!`;
+
+      document.getElementById('protBar').style.width = `${Math.min(100, (consP / (totalP || 1)) * 100)}%`;
+      document.getElementById('carbBar').style.width = `${Math.min(100, (consC / (totalC || 1)) * 100)}%`;
+      document.getElementById('fatBar').style.width = `${Math.min(100, (consF / (totalF || 1)) * 100)}%`;
+
+      renderHealthSyncView();
+    }
+
+    function renderWater() {
+      const container = document.getElementById('waterGlasses');
+      container.innerHTML = '';
+      for (let i = 1; i <= 14; i++) {
+        const active = i <= state.waterCount;
+        const btn = document.createElement('button');
+        btn.className = `h-8 rounded font-bold text-[11px] border transition-all ${
+          active ? 'bg-sky-500 border-sky-400 text-white' : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-sky-500'
+        }`;
+        btn.innerText = `${(i * 0.25).toFixed(2).replace('.00', '')}`;
+        btn.onclick = () => {
+          state.waterCount = (state.waterCount === i) ? i - 1 : i;
+          saveState();
+          renderWater();
+          renderHealthSyncView();
+        };
+        container.appendChild(btn);
+      }
+      document.getElementById('waterText').innerText = `${(state.waterCount * 0.25).toFixed(2)} / 3.50 L`;
+    }
+
+    // ==================== MÓDULO DE PROGRESO CORPORAL (4 SEMANAS) ====================
+    function loadWeekToForm(wIdx) {
+      const idx = parseInt(wIdx, 10);
+      document.getElementById('progWeek').value = String(idx);
+      const entry = state.progressEntries[idx] || { date: "", weight: "", waist: "", arm: "", sleep: "", notes: "" };
+      document.getElementById('progDate').value = entry.date || new Date().toISOString().slice(0, 10);
+      document.getElementById('progWeight').value = entry.weight || "";
+      document.getElementById('progWaist').value = entry.waist || "";
+      document.getElementById('progArm').value = entry.arm || "";
+      document.getElementById('progSleep').value = entry.sleep || "";
+      document.getElementById('progNotes').value = entry.notes || "";
+    }
+
+    function saveProgressEntry() {
+      const wIdx = parseInt(document.getElementById('progWeek').value, 10);
+      state.progressEntries[wIdx] = {
+        date: document.getElementById('progDate').value,
+        weight: document.getElementById('progWeight').value,
+        waist: document.getElementById('progWaist').value,
+        arm: document.getElementById('progArm').value,
+        sleep: document.getElementById('progSleep').value,
+        notes: document.getElementById('progNotes').value
+      };
+      saveState();
+      renderProgressView();
+      showBackupToast("✅ Registro corporal guardado automáticamente.");
+    }
+
+    function renderProgressView() {
+      const tbody = document.getElementById('progressTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      const validWeights = [];
+      const validWaists = [];
+      const validArms = [];
+      const validSleeps = [];
+
+      for (let i = 0; i <= 4; i++) {
+        const e = state.progressEntries[i] || {};
+        const w = parseFloat(e.weight);
+        const wst = parseFloat(e.waist);
+        const arm = parseFloat(e.arm);
+        const slp = parseFloat(e.sleep);
+
+        if (!isNaN(w)) validWeights.push({ idx: i, label: `S${i}`, val: w });
+        if (!isNaN(wst)) validWaists.push(wst);
+        if (!isNaN(arm)) validArms.push(arm);
+        if (!isNaN(slp)) validSleeps.push(slp);
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2.5 px-2 font-bold text-white">${progressWeekLabels[i]}</td>
+          <td class="py-2 px-2 text-slate-400">${e.date || '—'}</td>
+          <td class="py-2 px-2 font-extrabold text-emerald-400">${e.weight ? `${e.weight} kg` : '—'}</td>
+          <td class="py-2 px-2 text-slate-200">${e.waist ? `${e.waist} cm` : '—'}</td>
+          <td class="py-2 px-2 text-slate-200">${e.arm ? `${e.arm} cm` : '—'}</td>
+          <td class="py-2 px-2 text-sky-400 font-semibold">${e.sleep ? `${e.sleep} h` : '—'}</td>
+          <td class="py-2 px-2 text-slate-400 italic">${e.notes || '—'}</td>
+          <td class="py-2 px-2 text-right">
+            <button onclick="loadWeekToForm(${i})" class="text-emerald-400 hover:underline font-semibold">Editar</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      if (validWeights.length >= 1) {
+        const firstW = validWeights[0].val;
+        const lastW = validWeights[validWeights.length - 1].val;
+        const diffW = (lastW - firstW).toFixed(1);
+        document.getElementById('kpiWeight').innerText = `${lastW.toFixed(1)} kg`;
+        document.getElementById('kpiWeightDiff').innerText = validWeights.length > 1
+          ? `${diffW >= 0 ? '+' : ''}${diffW} kg vs inicio (${firstW} kg)`
+          : `Peso base registrado (${firstW} kg)`;
+      } else {
+        document.getElementById('kpiWeight').innerText = "-- kg";
+      }
+
+      if (validWaists.length >= 1) {
+        const firstWaist = validWaists[0];
+        const lastWaist = validWaists[validWaists.length - 1];
+        const diffWaist = (lastWaist - firstWaist).toFixed(1);
+        document.getElementById('kpiWaist').innerText = `${lastWaist.toFixed(1)} cm`;
+        document.getElementById('kpiWaistDiff').innerText = validWaists.length > 1
+          ? `${diffWaist >= 0 ? '+' : ''}${diffWaist} cm vs inicio`
+          : `Medida base: ${firstWaist} cm`;
+      }
+
+      if (validArms.length >= 1) {
+        const firstArm = validArms[0];
+        const lastArm = validArms[validArms.length - 1];
+        const diffArm = (lastArm - firstArm).toFixed(1);
+        document.getElementById('kpiArm').innerText = `${lastArm.toFixed(1)} cm`;
+        document.getElementById('kpiArmDiff').innerText = validArms.length > 1
+          ? `${diffArm >= 0 ? '+' : ''}${diffArm} cm ganados`
+          : `Medida base: ${firstArm} cm`;
+      }
+
+      if (validSleeps.length >= 1) {
+        const avgS = (validSleeps.reduce((a, b) => a + b, 0) / validSleeps.length).toFixed(1);
+        document.getElementById('kpiSleep').innerText = `${avgS} hrs`;
+        document.getElementById('kpiSleepStatus').innerText = avgS >= 7 ? "✅ En rango óptimo (7-8h)" : "⚠️ Intenta subir a 7-8h";
+      }
+
+      renderWeightSVG(validWeights);
+    }
+
+    function renderWeightSVG(points) {
+      const box = document.getElementById('weightChartBox');
+      if (!box) return;
+      if (points.length === 0) {
+        box.innerHTML = `<span class="text-xs text-slate-400">Ingresa al menos tu Peso del Día 1 en el formulario izquierdo para graficar tu curva de la Etapa 1.2.</span>`;
+        return;
+      }
+
+      const w = 520, h = 130, pad = 28;
+      const vals = points.map(p => p.val);
+      const minV = Math.min(...vals) - 1;
+      const maxV = Math.max(...vals) + 1;
+
+      const coords = points.map((p, idx) => {
+        const x = points.length === 1 ? w / 2 : pad + (idx / (points.length - 1)) * (w - pad * 2);
+        const y = h - pad - ((p.val - minV) / ((maxV - minV) || 1)) * (h - pad * 2);
+        return { x, y, ...p };
+      });
+
+      const polyPoints = coords.map(c => `${c.x},${c.y}`).join(' ');
+      const circles = coords.map(c => `
+        <circle cx="${c.x}" cy="${c.y}" r="5" fill="#10b981" stroke="#0f172a" stroke-width="2"></circle>
+        <text x="${c.x}" y="${c.y - 10}" text-anchor="middle" fill="#f8fafc" font-size="11" font-weight="bold">${c.val}kg</text>
+        <text x="${c.x}" y="${h - 6}" text-anchor="middle" fill="#94a3b8" font-size="10">${c.label}</text>
+      `).join('');
+
+      box.innerHTML = `
+        <svg viewBox="0 0 ${w} ${h}" class="w-full h-full">
+          <polyline fill="none" stroke="#10b981" stroke-width="3" points="${polyPoints}"></polyline>
+          ${circles}
+        </svg>
+      `;
+    }
+
+    function copyProgressReport() {
+      let text = "📈 *REPORTE DE PROGRESO - MENTUM ETAPA 1.2 (Francisco Verdugo)*\n\n";
+      for (let i = 0; i <= 4; i++) {
+        const e = state.progressEntries[i];
+        if (e && (e.weight || e.waist || e.arm)) {
+          text += `*${progressWeekLabels[i]}* (${e.date || 's/f'}):\n`;
+          text += `• Peso: *${e.weight || '-'} kg* | Cintura: *${e.waist || '-'} cm* | Brazo: *${e.arm || '-'} cm* | Sueño: *${e.sleep || '-'}h*\n`;
+          if (e.notes) text += `  _Nota: ${e.notes}_\n`;
+        }
+      }
+      navigator.clipboard.writeText(text).then(() => {
+        const fb = document.getElementById('progCopyFeedback');
+        fb.classList.remove('hidden');
+        setTimeout(() => fb.classList.add('hidden'), 3000);
+      });
+    }
+
+    // ==================== GOOGLE HEALTH SYNC ====================
+    function renderHealthSyncView() {
+      const grid = document.getElementById('ghMealsGrid');
+      if (!grid) return;
+
+      let consKcal = 0, consP = 0, consC = 0, consF = 0;
+      computedMealsSummary.forEach(m => {
+        if (m.checked) {
+          consKcal += m.kcal; consP += m.p; consC += m.c; consF += m.f;
+        }
+      });
+
+      const waterMl = state.waterCount * 250;
+      document.getElementById('ghTotalTitle').innerText = `${consKcal} kcal`;
+      document.getElementById('ghTotalP').innerText = `${consP} g`;
+      document.getElementById('ghTotalC').innerText = `${consC} g`;
+      document.getElementById('ghTotalF').innerText = `${consF} g`;
+      document.getElementById('ghTotalW').innerText = `${waterMl} ml`;
+      document.getElementById('ghWaterSummary').innerText = `Hidratación lista para Health Connect: ${waterMl} ml (${(waterMl/1000).toFixed(2)} L)`;
+
+      grid.innerHTML = computedMealsSummary.map((m, idx) => `
+        <div class="bg-slate-900/70 border ${m.checked ? 'border-slate-700' : 'border-slate-800 opacity-50'} rounded-xl p-4 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-[11px] font-bold text-emerald-400 uppercase">${m.ghType}</span>
+              <span class="text-xs font-extrabold text-white bg-slate-800 px-2 py-0.5 rounded">Opción ${m.opt}</span>
+            </div>
+            <p class="text-xs font-semibold text-slate-200 mb-3">${m.label.replace(`Opción ${m.opt}: `, '')}</p>
+          </div>
+          <div>
+            <div class="grid grid-cols-4 gap-1.5 text-center bg-slate-950/60 p-2 rounded-lg border border-slate-800 mb-3 text-xs">
+              <div>
+                <span class="text-[10px] text-slate-400 block">Kcal</span>
+                <span class="font-extrabold text-emerald-400">${m.kcal}</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-blue-400 block">Prot</span>
+                <span class="font-bold text-white">${m.p}g</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-amber-400 block">Carb</span>
+                <span class="font-bold text-white">${m.c}g</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-rose-400 block">Grasa</span>
+                <span class="font-bold text-white">${m.f}g</span>
+              </div>
+            </div>
+            <button onclick="copyMealForHealth(${idx})" class="w-full py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-xs transition">
+              📋 Copiar Quick Log (${m.title.split(':')[0]})
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function copyMealForHealth(target) {
+      let text = '';
+      if (target === 'total') {
+        const k = document.getElementById('ghTotalTitle').innerText;
+        const p = document.getElementById('ghTotalP').innerText;
+        const c = document.getElementById('ghTotalC').innerText;
+        const f = document.getElementById('ghTotalF').innerText;
+        const w = document.getElementById('ghTotalW').innerText;
+        text = `Google Health Quick Log (Total Día Mentum 1.2)\nCalorías: ${k}\nProteínas: ${p}\nCarbohidratos: ${c}\nGrasas: ${f}\nAgua: ${w}`;
+      } else {
+        const m = computedMealsSummary[target];
+        text = `Google Health - ${m.ghType} [Mentum C${target + 1} Op.${m.opt}]\nCalorías: ${m.kcal} kcal | Proteínas: ${m.p}g | Carbohidratos: ${m.c}g | Grasas: ${m.f}g`;
+      }
+
+      navigator.clipboard.writeText(text).then(() => {
+        const toast = document.getElementById('healthCopyToast');
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+      });
+    }
+
+    function downloadHealthCSV() {
+      const today = new Date().toISOString().slice(0, 10);
+      let csv = "Fecha,Tiempo_Comida_Google_Health,Nombre_Plato_Mentum,Calorias_kcal,Proteinas_g,Carbohidratos_g,Grasas_g,Agua_ml\n";
+      computedMealsSummary.forEach((m, i) => {
+        if (m.checked) {
+          const cleanName = m.label.replace(/,/g, ' ');
+          csv += `${today},${m.ghType},"Mentum C${i+1} ${cleanName}",${m.kcal},${m.p},${m.c},${m.f},0\n`;
+        }
+      });
+      csv += `${today},Hydration,"Consumo de Agua Diario",0,0,0,0,${state.waterCount * 250}\n`;
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mentum_google_health_${today}.csv`;
+      a.click();
+    }
+
+    // ==================== PLAN SEMANAL Y COMPRAS ====================
+    function renderWeekPlanner() {
+      const tbody = document.getElementById('weekTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+
+      daysOfWeek.forEach((dayName, dIdx) => {
+        const dayMeals = state.weekPlan[dIdx];
+        const allSame = dayMeals.every(m => m === dayMeals[0]);
+
+        let masterOpts = `<option value="mix" ${!allSame ? 'selected' : ''} disabled>Mix</option>`;
+        for (let o = 1; o <= 7; o++) {
+          masterOpts += `<option value="${o}" ${allSame && dayMeals[0] === o ? 'selected' : ''}>Todo Op.${o}</option>`;
+        }
+
+        let mealCells = '';
+        for (let mIdx = 0; mIdx < 5; mIdx++) {
+          let opts = '';
+          for (let o = 1; o <= 7; o++) {
+            opts += `<option value="${o}" ${dayMeals[mIdx] === o ? 'selected' : ''}>Opción ${o}</option>`;
+          }
+          mealCells += `
+            <td class="py-2 px-1.5">
+              <select onchange="updateWeekCell(${dIdx}, ${mIdx}, this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 rounded px-2 py-1.5 text-xs focus:border-emerald-500">
+                ${opts}
+              </select>
+            </td>
+          `;
+        }
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-2.5 px-2 font-bold text-white">${dayName}</td>
+          <td class="py-2 px-1.5">
+            <select onchange="updateWholeDay(${dIdx}, this.value)" class="bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 font-bold rounded px-2 py-1.5 text-xs">
+              ${masterOpts}
+            </select>
+          </td>
+          ${mealCells}
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function updateWeekCell(dayIdx, mealIdx, val) {
+      state.weekPlan[dayIdx][mealIdx] = parseInt(val, 10);
+      saveState();
+      renderWeekPlanner();
+      renderShoppingList();
+    }
+
+    function updateWholeDay(dayIdx, val) {
+      const num = parseInt(val, 10);
+      state.weekPlan[dayIdx] = [num, num, num, num, num];
+      saveState();
+      renderWeekPlanner();
+      renderShoppingList();
+    }
+
+    function copyDayMixToWeek() {
+      for (let d = 0; d < 5; d++) {
+        state.weekPlan[d] = [...state.mealOptions];
+      }
+      saveState();
+      renderWeekPlanner();
+      renderShoppingList();
+    }
+
+    function setVariedWeek() {
+      state.weekPlan = [
+        [1, 1, 1, 1, 1],
+        [2, 2, 2, 2, 2],
+        [3, 3, 3, 3, 3],
+        [4, 4, 4, 4, 4],
+        [5, 5, 5, 5, 5],
+        [6, 6, 6, 6, 6],
+        [7, 7, 7, 7, 7]
+      ];
+      saveState();
+      renderWeekPlanner();
+      renderShoppingList();
+    }
+
+    function computeWeeklyTotals() {
+      const totals = {};
+      for (let d = 0; d < 7; d++) {
+        for (let m = 0; m < 5; m++) {
+          const opt = state.weekPlan[d][m];
+          const items = shoppingIngredientsMap[m][opt] || [];
+          items.forEach(it => {
+            totals[it.id] = (totals[it.id] || 0) + it.qty;
+          });
+        }
+      }
+      return totals;
+    }
+
+    function renderShoppingList() {
+      const container = document.getElementById('shoppingCategories');
+      if (!container) return;
+      const totals = computeWeeklyTotals();
+      const grouped = {};
+
+      Object.keys(totals).forEach(id => {
+        const meta = ingredientCatalog[id];
+        if (!meta) return;
+        if (!grouped[meta.cat]) grouped[meta.cat] = [];
+        grouped[meta.cat].push({ id, qty: totals[id], ...meta });
+      });
+
+      container.innerHTML = '';
+
+      Object.keys(grouped).forEach(catName => {
+        const itemsHtml = grouped[catName].map(item => {
+          const checked = !!state.checkedShopItems[item.id];
+          const qtyRounded = Math.round(item.qty * 10) / 10;
+          const rawInfo = item.rawFactor
+            ? `<span class="block text-[11px] text-amber-400 font-semibold">≈ ${Math.round(item.qty * item.rawFactor)} ${item.rawUnit}</span>`
+            : '';
+
+          return `
+            <label class="flex items-start justify-between gap-2 p-2.5 rounded-lg bg-slate-900/60 border border-slate-800/90 cursor-pointer hover:border-slate-700 transition ${checked ? 'opacity-45 line-through' : ''}">
+              <div class="flex items-start gap-2.5">
+                <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleShopItem('${item.id}', this.checked)" class="mt-1 w-4 h-4 accent-emerald-500 rounded">
+                <div>
+                  <span class="text-xs font-bold text-slate-100 block">${item.name}</span>
+                  <span class="text-[11px] text-slate-400 block">${item.brand}</span>
+                </div>
+              </div>
+              <div class="text-right whitespace-nowrap">
+                <span class="text-xs font-extrabold text-emerald-400">${qtyRounded} ${item.unit}</span>
+                ${rawInfo}
+              </div>
+            </label>
+          `;
+        }).join('');
+
+        const box = document.createElement('div');
+        box.className = "bg-slate-900/40 border border-slate-800 rounded-xl p-4 flex flex-col gap-2";
+        box.innerHTML = `
+          <h3 class="text-sm font-extrabold text-white border-b border-slate-800 pb-2 mb-1">${catName}</h3>
+          <div class="space-y-2">${itemsHtml}</div>
+        `;
+        container.appendChild(box);
+      });
+    }
+
+    function toggleShopItem(id, isChecked) {
+      state.checkedShopItems[id] = isChecked;
+      saveState();
+      renderShoppingList();
+    }
+
+    function clearCheckedShop() {
+      state.checkedShopItems = {};
+      saveState();
+      renderShoppingList();
+    }
+
+    function copyShoppingList() {
+      const totals = computeWeeklyTotals();
+      const grouped = {};
+      Object.keys(totals).forEach(id => {
+        const meta = ingredientCatalog[id];
+        if (!meta || state.checkedShopItems[id]) return;
+        if (!grouped[meta.cat]) grouped[meta.cat] = [];
+        grouped[meta.cat].push({ id, qty: totals[id], ...meta });
+      });
+
+      let text = "🛒 *LISTA DE COMPRAS SEMANAL - MENTUM 1.2*\n";
+      Object.keys(grouped).forEach(cat => {
+        text += `\n*${cat}*\n`;
+        grouped[cat].forEach(it => {
+          const q = Math.round(it.qty * 10) / 10;
+          const raw = it.rawFactor ? ` (aprox. ${Math.round(it.qty * it.rawFactor)} ${it.rawUnit})` : '';
+          text += `• ${it.name}: *${q} ${it.unit}*${raw} _[${it.brand}]_\n`;
+        });
+      });
+      text += "\n💧 *Hidratación:* 1 a 2 Suerox / Electrolitos sin azúcar.";
+
+      navigator.clipboard.writeText(text).then(() => {
+        const fb = document.getElementById('copyFeedback');
+        fb.classList.remove('hidden');
+        setTimeout(() => fb.classList.add('hidden'), 3500);
+      });
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
