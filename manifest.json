@@ -1,0 +1,12 @@
+{
+  "background_color": "#474040",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Registro Dieta",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Registro",
+  "start_url": "https://francisco-verdugo-v.github.io/Registro_Dieta/",
+  "theme_color": "#ffffff",
+  "lang": "es"
+}
